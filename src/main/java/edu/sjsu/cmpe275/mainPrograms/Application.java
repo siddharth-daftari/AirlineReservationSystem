@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(exclude = { HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class,
 	    DataSourceAutoConfiguration.class })
-@ComponentScan({"edu.sjsu.cmpe275.*"})
+@ComponentScan({"edu.sjsu.cmpe275.*" })
 public class Application {
 
     public static void main(String[] args) {
