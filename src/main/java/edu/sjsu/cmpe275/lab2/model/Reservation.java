@@ -6,10 +6,12 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -30,6 +32,7 @@ public class Reservation {
 	@GeneratedValue(generator="system-uuid") 
 	@GenericGenerator(name="system-uuid", strategy = "uuid")
 	private String orderNumber;
+	
 	@ManyToOne(optional=false)
 	@JoinColumn(name="PASSENGER_ID")
 	private Passenger passenger;
@@ -37,7 +40,8 @@ public class Reservation {
 	@Column(name="PRICE")
     private int price; // sum of each flight’s price.
 	
-	@OneToMany(mappedBy="number")
+	@OneToMany()
+	@JoinTable(name = "RESERVATION_FLIGHT", joinColumns = { @JoinColumn(name = "ORDER_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") })
     private List<Flight> flights;
     
 	public String getOrderNumber() {

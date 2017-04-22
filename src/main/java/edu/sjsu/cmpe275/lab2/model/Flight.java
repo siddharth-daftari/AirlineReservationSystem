@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -27,6 +28,7 @@ public class Flight {
 		@GeneratedValue(generator="system-uuid") 
 		@GenericGenerator(name="system-uuid", strategy = "uuid")
 	   	private String number; // Each flight has a unique flight number.
+		
 		@Column(name="PRICE")
 		private int price;
 		@Column(name="SOURCE")
@@ -51,7 +53,8 @@ public class Flight {
 		@Embedded		
 	    private Plane plane;  // Embedded
 	    
-		@OneToMany(mappedBy="id")
+		@OneToMany()
+		@JoinTable(name = "FLIGHT_PASSENGER", joinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "PASSENGER_ID") })
 		private List<Passenger> passengers;
 		
 		public String getNumber() {
