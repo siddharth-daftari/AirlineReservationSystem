@@ -8,15 +8,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity
-@Table(name="PLANE")
+//@Table(name="PLANE")
 @Embeddable
 public class Plane {
 		
-		@Id
+		/*@Id
 		@Column(name="PLANE_ID")
 		@GeneratedValue(strategy=GenerationType.AUTO)
-		private long planeId;
+		private long planeId;*/
+		
 		@Column(name="CAPACITY")
 		private int capacity;
 		@Column(name="MODEL")
@@ -25,6 +25,15 @@ public class Plane {
 	    private String manufacturer;
 		@Column(name="YEAROFMANUFACTURE")
 	    private int yearOfManufacture;
+		
+		
+		/*public long getPlaneId() {
+			return planeId;
+		}
+		public void setPlaneId(long planeId) {
+			this.planeId = planeId;
+		}*/
+		
 		public int getCapacity() {
 			return capacity;
 		}

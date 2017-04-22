@@ -16,7 +16,6 @@ import org.springframework.web.servlet.View;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import edu.sjsu.cmpe275.jsonViews.GreetingsView;
 import edu.sjsu.cmpe275.lab2.model.Greeting;
 
 @RestController
@@ -25,7 +24,7 @@ public class GreetingController {
 	private static final String template = "Hello, %s!";
 	private final AtomicLong counter = new AtomicLong();
 	
-	@Autowired
+	/*@Autowired
     ObjectMapper mapper;
 	
     @RequestMapping("/greeting")
@@ -46,6 +45,6 @@ public class GreetingController {
 			e.printStackTrace();
 			return "";
 		}
-    }
+    }*/
     
 }

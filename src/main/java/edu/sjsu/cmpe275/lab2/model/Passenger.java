@@ -1,7 +1,5 @@
 package edu.sjsu.cmpe275.lab2.model;
 
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -9,13 +7,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.GenericGenerator;
+
 @Entity
 @Table(name="PASSENGER")
 public class Passenger {
-	@Id
+	/*@Id
 	@Column(name="PASSENGER_ID")
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.AUTO)*/
+	@Id 
+	@Column(name="PASSENGER_ID")
+	@GeneratedValue(generator="system-uuid") 
+	@GenericGenerator(name="system-uuid", strategy = "uuid")
 	private String id;
+	
 	@Column(name="FIRSTNAME")
 	private String firstname;
 	@Column(name="LASTNAME")
@@ -26,6 +31,15 @@ public class Passenger {
 	private String gender;
 	@Column(name="PHONE")
 	private String phone; //must be unique
+	
+	public Passenger(String firstname, String lastname, int age, String gender, String phone) {
+		super();
+		this.firstname = firstname;
+		this.lastname = lastname;
+		this.age = age;
+		this.gender = gender;
+		this.phone = phone;
+	}
 	
 	public String getId() {
 		return id;

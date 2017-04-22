@@ -8,23 +8,30 @@ import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.GenericGenerator;
+
 @Entity
 @Table(name="FLIGHT")
 public class Flight {
-		@Id
+		/*@Id
+		@Column(name="FLIGHT_NUMBER")*/
+		@Id 
 		@Column(name="FLIGHT_NUMBER")
+		@GeneratedValue(generator="system-uuid") 
+		@GenericGenerator(name="system-uuid", strategy = "uuid")
 	   	private String number; // Each flight has a unique flight number.
 		@Column(name="PRICE")
 		private int price;
-		@Column(name="FROM")
+		@Column(name="SOURCE")
 	    private String from;
-		@Column(name="TO")
+		@Column(name="DESTINATION")
 	    private String to;
 
 	    /*  Date format: yy-mm-dd-hh, do not include minutes and sceonds.
@@ -39,11 +46,14 @@ public class Flight {
 		@Column(name="DESCRIPTION")
 	    private String description;
 		
-		@Embedded
-		@JoinColumn(name="PLANE_ID")		
+
+		//@JoinColumn(name="PLANE_ID")
+		@Embedded		
 	    private Plane plane;  // Embedded
-	    @OneToMany(mappedBy="FLIGHT_NUMBER")
+	    
+		@OneToMany(mappedBy="id")
 		private List<Passenger> passengers;
+		
 		public String getNumber() {
 			return number;
 		}
