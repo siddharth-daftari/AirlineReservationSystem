@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe275.lab2;
+package edu.sjsu.cmpe275.lab2.model;
 
 import com.fasterxml.jackson.annotation.JsonView;
 

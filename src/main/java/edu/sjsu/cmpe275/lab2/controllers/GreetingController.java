@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe275.controllers;
+package edu.sjsu.cmpe275.lab2.controllers;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import edu.sjsu.cmpe275.jsonViews.GreetingsView;
-import edu.sjsu.cmpe275.lab2.Greeting;
+import edu.sjsu.cmpe275.lab2.model.Greeting;
 
 @RestController
 public class GreetingController {
