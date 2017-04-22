@@ -1,14 +1,40 @@
 package edu.sjsu.cmpe275.lab2.model;
 
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="PASSENGER")
 public class Passenger {
-	
+	@Id
+	@Column(name="PASSENGER_ID")
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private String id;
+	@Column(name="FIRSTNAME")
 	private String firstname;
+	@Column(name="LASTNAME")
 	private String lastname;
+	@Column(name="AGE")
 	private int age;
+	@Column(name="GENDER")
 	private String gender;
+	@Column(name="PHONE")
 	private String phone; //must be unique
 	//Reservation list
+	private List<Reservation> reservations;
+	
+	public List<Reservation> getReservations() {
+		return reservations;
+	}
+	public void setReservations(List<Reservation> reservations) {
+		this.reservations = reservations;
+	}
 	public String getId() {
 		return id;
 	}

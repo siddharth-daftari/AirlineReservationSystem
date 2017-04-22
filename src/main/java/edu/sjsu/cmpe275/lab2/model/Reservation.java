@@ -2,9 +2,28 @@ package edu.sjsu.cmpe275.lab2.model;
 
 import java.util.List;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="RESERVATION")
 public class Reservation {
+	@Id
+	@Column(name="ORDER_NUMBER")
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private String orderNumber;
-    private Passenger passenger;
+	@ManyToOne(optional=false)
+	@JoinColumn(name="PASSENGER_ID")
+	private Passenger passenger;
     private int price; // sum of each flight’s price.
     private List<Flight> flights;
 	public String getOrderNumber() {

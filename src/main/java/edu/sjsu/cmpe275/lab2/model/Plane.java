@@ -1,9 +1,29 @@
 package edu.sjsu.cmpe275.lab2.model;
 
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="PLANE")
+@Embeddable
 public class Plane {
-	  	private int capacity;
-	    private String model; 
+		
+		@Id
+		@Column(name="PLANE_ID")
+		@GeneratedValue(strategy=GenerationType.AUTO)
+		private long planeId;
+		@Column(name="CAPACITY")
+		private int capacity;
+		@Column(name="MODEL")
+	    private String model;
+		@Column(name="MANUFACTURER")
 	    private String manufacturer;
+		@Column(name="YEAROFMANUFACTURE")
 	    private int yearOfManufacture;
 		public int getCapacity() {
 			return capacity;

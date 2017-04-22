@@ -3,21 +3,47 @@ package edu.sjsu.cmpe275.lab2.model;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="FLIGHT")
 public class Flight {
+		@Id
+		@Column(name="FLIGHT_NUMBER")
 	   	private String number; // Each flight has a unique flight number.
-	    private int price;
+		@Column(name="PRICE")
+		private int price;
+		@Column(name="FROM")
 	    private String from;
+		@Column(name="TO")
 	    private String to;
 
 	    /*  Date format: yy-mm-dd-hh, do not include minutes and sceonds.
 	    ** Example: 2017-03-22-19
 	    The system only needs to supports PST. You can ignore other time zones.  */
-	    private Date departureTime;     
+		@Column(name="DEPARTURE_TIME")
+		private Date departureTime;
+		@Column(name="ARRIVAL_TIME")
 	    private Date arrivalTime;
+		@Column(name="SEATS_LEFT")
 	    private int seatsLeft; 
+		@Column(name="DESCRIPTION")
 	    private String description;
+		
+		@Embedded
+		@JoinColumn(name="PLANE_ID")		
 	    private Plane plane;  // Embedded
-	    private List<Passenger> passengers;
+	    @OneToMany(mappedBy="FLIGHT_NUMBER")
+		private List<Passenger> passengers;
 		public String getNumber() {
 			return number;
 		}
