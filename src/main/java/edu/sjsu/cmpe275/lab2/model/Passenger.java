@@ -26,15 +26,7 @@ public class Passenger {
 	private String gender;
 	@Column(name="PHONE")
 	private String phone; //must be unique
-	//Reservation list
-	private List<Reservation> reservations;
 	
-	public List<Reservation> getReservations() {
-		return reservations;
-	}
-	public void setReservations(List<Reservation> reservations) {
-		this.reservations = reservations;
-	}
 	public String getId() {
 		return id;
 	}
