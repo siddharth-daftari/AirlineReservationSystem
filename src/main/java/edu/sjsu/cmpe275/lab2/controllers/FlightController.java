@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -41,21 +43,27 @@ public class FlightController {
 	}
 	
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
-	public void deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
+	public ResponseEntity<Object> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
 		
 		try {
 				Flight flight = new Flight();
 				flight.setNumber(flightNumber);
 				flight = flightDAO.findOne(flightNumber);
+				if(flight==null){
+					return ResponseEntity.status(404).body("Flight with number "+flightNumber+" does not exist");
+				}
 				if(flight.getPassengers().isEmpty()){
 					flightDAO.delete(flight);
+					return ResponseEntity.status(HttpStatus.OK).body("Flight with number "+ flightNumber+" is deleted successfully");
 				}
 				else{
 					System.out.println("Need to send 400. Reservations exist.");
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not delete a flight that has one or more reservation");
 				}
 				
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
 	}
 }
