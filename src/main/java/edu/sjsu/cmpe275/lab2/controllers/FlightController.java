@@ -39,4 +39,23 @@ public class FlightController {
 		}
 		return null;
 	}
+	
+	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
+	public void deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
+		
+		try {
+				Flight flight = new Flight();
+				flight.setNumber(flightNumber);
+				flight = flightDAO.findOne(flightNumber);
+				if(flight.getPassengers().isEmpty()){
+					flightDAO.delete(flight);
+				}
+				else{
+					System.out.println("Need to send 400. Reservations exist.");
+				}
+				
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

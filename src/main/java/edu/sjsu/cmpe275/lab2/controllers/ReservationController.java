@@ -43,6 +43,7 @@ public class ReservationController {
 				Flight flight = new Flight();
 				flight = flightDAO.findOne(flightNumber);
 				flight.getPassengers().add(passenger);
+				flight.setSeatsLeft(flight.getSeatsLeft()-1);
 				flightLists.add(flight);
 				price+=flightDAO.findOne(flightNumber).getPrice();
 			}	
