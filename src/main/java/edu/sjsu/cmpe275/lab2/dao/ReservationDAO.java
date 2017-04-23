@@ -12,6 +12,6 @@ import edu.sjsu.cmpe275.lab2.model.Passenger;
 
 @Repository
 @Transactional
-public interface ReservationDAO extends CrudRepository<Reservation, Long> {
+public interface ReservationDAO extends CrudRepository<Reservation, String> {
 	List<Reservation> findByPassenger(Passenger passenger);
 }

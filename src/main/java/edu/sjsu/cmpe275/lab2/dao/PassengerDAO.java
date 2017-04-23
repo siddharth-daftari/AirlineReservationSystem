@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 @Transactional
-public interface PassengerDAO extends CrudRepository<Passenger, Long> {
+public interface PassengerDAO extends CrudRepository<Passenger, String> {
 	List<Passenger> findByPhone(String phone);
 	List<Passenger> findById(String id);
 }
