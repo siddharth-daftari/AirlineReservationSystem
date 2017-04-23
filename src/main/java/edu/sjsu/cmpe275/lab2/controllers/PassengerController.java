@@ -1,16 +1,22 @@
 package edu.sjsu.cmpe275.lab2.controllers;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
 import org.hibernate.Query;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.ModelMap;
@@ -21,6 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
@@ -96,9 +106,10 @@ public class PassengerController {
 	}
 	
 	@RequestMapping(value="/passengerWithXml/{id}")
-    public @ResponseBody Map<String, Object> getPassengerWithXmlReq(@PathVariable("id") String id) throws Exception {
+    public @ResponseBody String getPassengerWithXmlReq(@PathVariable("id") String id) throws Exception {
 		Passenger passengerTemp = null;
 		System.out.println("XML wadi method ma");
+		
 		//check if unique phone number
 		List<Passenger> listOfPassengers = passengerDAO.findById(id);
 		
@@ -107,7 +118,40 @@ public class PassengerController {
 		}else{
 			passengerTemp = listOfPassengers.get(0);
 			
-			return (new JSONObject()).toMap();
+			JSONObject returnJsonVar = new JSONObject();
+			
+			List<Reservation> listOfReservation = reservationDAO.findByPassenger(passengerTemp);
+			
+			JSONObject passenger = new JSONObject();
+			passenger.put("id", passengerTemp.getId());
+			passenger.put("firstname", passengerTemp.getFirstname());
+			passenger.put("lastname", passengerTemp.getLastname());
+			passenger.put("age", passengerTemp.getAge());
+			passenger.put("gender", passengerTemp.getGender());
+			passenger.put("phone", passengerTemp.getPhone());
+			
+			JSONObject reservation = new JSONObject();
+			reservation.put("reservation", listOfReservation);
+			
+			passenger.put("reservations", reservation);
+			
+			returnJsonVar.put("passenger", passenger);
+			
+			String xml = XML.toString(returnJsonVar);
+			
+			//converting XML to pretty print format
+			Document document = DocumentHelper.parseText(xml);  
+            StringWriter stringWriter = new StringWriter();  
+            OutputFormat outputFormat = OutputFormat.createPrettyPrint();  
+            outputFormat.setIndent(true);
+            outputFormat.setIndentSize(3); 
+            outputFormat.setSuppressDeclaration(true);
+            outputFormat.setNewLineAfterDeclaration(false);
+            XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
+            xmlWriter.write(document);  
+            
+            return stringWriter.toString();
+			
 		}
 	}
 	
