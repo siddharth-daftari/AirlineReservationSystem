@@ -33,22 +33,23 @@ public class ReservationController {
 		try {
 			Passenger passenger = new Passenger();
 			passenger = passengerDAO.findOne(passengerId);
-			System.out.println(" Name "+ passenger.getFirstname());
+			
 			List<Flight> flightLists = new ArrayList<Flight>();
 			
 			
 			int price = 0;
-			System.out.println(flightList);
+			
 			for (String flightNumber : flightList) {
 				Flight flight = new Flight();
 				flight = flightDAO.findOne(flightNumber);
+				flight.getPassengers().add(passenger);
 				flightLists.add(flight);
 				price+=flightDAO.findOne(flightNumber).getPrice();
 			}	
 			reservation = new Reservation(passenger, price, flightLists);
 			
 			reservation = reservationDAO.save(reservation);
-			System.out.println("Order No :" + reservation.getOrderNumber());
+			//System.out.println("Order No :" + reservation.getOrderNumber());
 			reservation = reservationDAO.findOne(reservation.getOrderNumber());
 						
 		}catch(Exception e){
