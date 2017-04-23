@@ -1,14 +1,21 @@
 package edu.sjsu.cmpe275.lab2.model;
 
 
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -27,20 +34,30 @@ public class Reservation {
 	@GenericGenerator(name="system-uuid", strategy = "uuid")
 	private String orderNumber;
 	
-	@ManyToOne(optional=false)
+	@ManyToOne(optional=false, fetch=FetchType.EAGER)
 	@JoinColumn(name="PASSENGER_ID")
 	private Passenger passenger;
 	
 	@Column(name="PRICE")
     private int price; // sum of each flight’s price.
 	
-	@OneToMany()
+	@ManyToMany()
 	@JoinTable(name = "RESERVATION_FLIGHT", joinColumns = { @JoinColumn(name = "ORDER_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") })
     private List<Flight> flights;
     
 	public Reservation() {
 	}
 	
+	
+	
+	public Reservation(Passenger passenger, int price, List<Flight> flights) {
+		super();
+		this.passenger = passenger;
+		this.price = price;
+		this.flights = flights;
+	}
+
+
 	public String getOrderNumber() {
 		return orderNumber;
 	}

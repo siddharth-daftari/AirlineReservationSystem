@@ -12,9 +12,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.GenericGenerator;
 
@@ -25,8 +27,7 @@ public class Flight {
 		@Column(name="FLIGHT_NUMBER")*/
 		@Id 
 		@Column(name="FLIGHT_NUMBER")
-		@GeneratedValue(generator="system-uuid") 
-		@GenericGenerator(name="system-uuid", strategy = "uuid")
+		
 	   	private String number; // Each flight has a unique flight number.
 		
 		@Column(name="PRICE")
@@ -52,15 +53,29 @@ public class Flight {
 		//@JoinColumn(name="PLANE_ID")
 		@Embedded		
 	    private Plane plane;  // Embedded
-	    
-		@OneToMany()
+	     
+		public Flight() {
+			super();
+		}
+		@ManyToMany()
 		@JoinTable(name = "FLIGHT_PASSENGER", joinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "PASSENGER_ID") })
 		private List<Passenger> passengers;
 		
-		public Flight() {
+		
+		public Flight(String number, int price, String from, String to, Date departureTime, Date arrivalTime,
+				int seatsLeft, String description, Plane plane, List<Passenger> passengers) {
+			super();
+			this.number = number;
+			this.price = price;
+			this.from = from;
+			this.to = to;
+			this.departureTime = departureTime;
+			this.arrivalTime = arrivalTime;
+			this.seatsLeft = seatsLeft;
+			this.description = description;
+			this.plane = plane;
+			this.passengers = passengers;
 		}
-		
-		
 		public String getNumber() {
 			return number;
 		}
