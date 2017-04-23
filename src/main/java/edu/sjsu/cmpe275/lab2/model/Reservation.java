@@ -44,6 +44,19 @@ public class Reservation {
 	@JoinTable(name = "RESERVATION_FLIGHT", joinColumns = { @JoinColumn(name = "ORDER_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") })
     private List<Flight> flights;
     
+	public Reservation(){
+		
+	}
+	
+	
+	public Reservation(Passenger passenger, int price, List<Flight> flights) {
+		super();
+		this.passenger = passenger;
+		this.price = price;
+		this.flights = flights;
+	}
+
+
 	public String getOrderNumber() {
 		return orderNumber;
 	}

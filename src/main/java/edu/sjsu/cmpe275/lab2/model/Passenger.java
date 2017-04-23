@@ -41,6 +41,10 @@ public class Passenger {
 		this.phone = phone;
 	}
 	
+	public Passenger(){
+		
+	}
+	
 	public String getId() {
 		return id;
 	}

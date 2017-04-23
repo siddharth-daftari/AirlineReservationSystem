@@ -19,6 +19,13 @@ public class Plane {
 		
 		@Column(name="CAPACITY")
 		private int capacity;
+		public Plane(int capacity, String model, String manufacturer, int yearOfManufacture) {
+			super();
+			this.capacity = capacity;
+			this.model = model;
+			this.manufacturer = manufacturer;
+			this.yearOfManufacture = yearOfManufacture;
+		}
 		@Column(name="MODEL")
 	    private String model;
 		@Column(name="MANUFACTURER")
@@ -34,6 +41,10 @@ public class Plane {
 			this.planeId = planeId;
 		}*/
 		
+		
+		public Plane() {
+			
+		}
 		public int getCapacity() {
 			return capacity;
 		}
