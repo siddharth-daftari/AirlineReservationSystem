@@ -26,13 +26,8 @@ public class Plane {
 		@Column(name="YEAROFMANUFACTURE")
 	    private int yearOfManufacture;
 		
-		
-		/*public long getPlaneId() {
-			return planeId;
+		public Plane() {
 		}
-		public void setPlaneId(long planeId) {
-			this.planeId = planeId;
-		}*/
 		
 		public int getCapacity() {
 			return capacity;

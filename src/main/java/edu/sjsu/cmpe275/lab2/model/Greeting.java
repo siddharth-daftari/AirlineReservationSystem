@@ -5,11 +5,12 @@ import com.fasterxml.jackson.annotation.JsonView;
 
 public class Greeting {
 	
-	private final long id;
+	private  long id;
 	
-    private final String content;
+    private  String content;
 	
-	
+    public Greeting() {
+	}
 
     public Greeting(long id, String content) {
         this.id = id;

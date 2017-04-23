@@ -1,20 +1,14 @@
 package edu.sjsu.cmpe275.lab2.model;
 
 
-
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -44,6 +38,9 @@ public class Reservation {
 	@JoinTable(name = "RESERVATION_FLIGHT", joinColumns = { @JoinColumn(name = "ORDER_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") })
     private List<Flight> flights;
     
+	public Reservation() {
+	}
+	
 	public String getOrderNumber() {
 		return orderNumber;
 	}

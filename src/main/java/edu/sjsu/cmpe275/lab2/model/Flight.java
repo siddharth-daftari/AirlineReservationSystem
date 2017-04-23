@@ -57,6 +57,10 @@ public class Flight {
 		@JoinTable(name = "FLIGHT_PASSENGER", joinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "PASSENGER_ID") })
 		private List<Passenger> passengers;
 		
+		public Flight() {
+		}
+		
+		
 		public String getNumber() {
 			return number;
 		}

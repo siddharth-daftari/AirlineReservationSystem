@@ -15,22 +15,28 @@ public class Passenger {
 	/*@Id
 	@Column(name="PASSENGER_ID")
 	@GeneratedValue(strategy=GenerationType.AUTO)*/
+	//, unique = true, nullable = false
+	
 	@Id 
 	@Column(name="PASSENGER_ID")
 	@GeneratedValue(generator="system-uuid") 
 	@GenericGenerator(name="system-uuid", strategy = "uuid")
 	private String id;
 	
-	@Column(name="FIRSTNAME")
+	@Column(name="FIRSTNAME", nullable = false)
 	private String firstname;
-	@Column(name="LASTNAME")
+	@Column(name="LASTNAME", nullable = false)
 	private String lastname;
-	@Column(name="AGE")
+	@Column(name="AGE", nullable = false)
 	private int age;
-	@Column(name="GENDER")
+	@Column(name="GENDER", nullable = false)
 	private String gender;
-	@Column(name="PHONE")
+	@Column(name="PHONE", unique = true, nullable = false)
 	private String phone; //must be unique
+	
+	public Passenger() {
+		
+	}
 	
 	public Passenger(String firstname, String lastname, int age, String gender, String phone) {
 		super();
