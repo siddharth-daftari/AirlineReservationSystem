@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
+import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
@@ -22,13 +23,17 @@ public class ReservationController {
 	private ReservationDAO reservationDAO;
 	@Autowired
 	private FlightDAO flightDAO;
-	Reservation reservation = null;
-
+	//Reservation reservation = null;
+	@Autowired
+	private PassengerDAO passengerDAO;
+	
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
     public @ResponseBody Reservation createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) {
+		Reservation reservation = null;
 		try {
 			Passenger passenger = new Passenger();
-			passenger.setId(passengerId);
+			passenger = passengerDAO.findOne(passengerId);
+			System.out.println(" Name "+ passenger.getFirstname());
 			List<Flight> flightLists = new ArrayList<Flight>();
 			
 			
@@ -36,21 +41,16 @@ public class ReservationController {
 			System.out.println(flightList);
 			for (String flightNumber : flightList) {
 				Flight flight = new Flight();
-				System.out.println(flightNumber);
-				flight.setNumber(flightNumber);
+				flight = flightDAO.findOne(flightNumber);
 				flightLists.add(flight);
 				price+=flightDAO.findOne(flightNumber).getPrice();
 			}	
-			
-			//int price = flightDAO.findPrice(flightList);
-			System.out.println(price);
-			System.out.println(flightLists.toString());
 			reservation = new Reservation(passenger, price, flightLists);
-			System.out.println(reservationDAO.save(reservation).getPassenger());
 			
-			/*passenger = new Passenger(firstname,lastname, age, gender, phone);
-			passengerDAO.save(passenger);*/
-			
+			reservation = reservationDAO.save(reservation);
+			System.out.println("Order No :" + reservation.getOrderNumber());
+			reservation = reservationDAO.findOne(reservation.getOrderNumber());
+						
 		}catch(Exception e){
 			e.printStackTrace();
 		}

@@ -3,6 +3,7 @@ package edu.sjsu.cmpe275.lab2.model;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
@@ -57,7 +58,7 @@ public class Flight {
 		public Flight() {
 			super();
 		}
-		@ManyToMany()
+		@ManyToMany(cascade=CascadeType.ALL)
 		@JoinTable(name = "FLIGHT_PASSENGER", joinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "PASSENGER_ID") })
 		private List<Passenger> passengers;
 		
