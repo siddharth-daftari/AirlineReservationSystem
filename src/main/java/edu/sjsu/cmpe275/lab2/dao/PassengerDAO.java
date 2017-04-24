@@ -14,4 +14,5 @@ import java.util.List;
 public interface PassengerDAO extends CrudRepository<Passenger, String> {
 	List<Passenger> findByPhone(String phone);
 	List<Passenger> findById(String id);
+	
 }

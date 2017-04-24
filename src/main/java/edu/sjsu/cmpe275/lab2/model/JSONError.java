@@ -7,6 +7,11 @@ public class JSONError {
 	public JSONError() {
 	}
 	
+	public JSONError(String code, String msg) {
+		this.code = code;
+		this.msg = msg;
+	}
+	
 	public String getCode() {
 		return code;
 	}
