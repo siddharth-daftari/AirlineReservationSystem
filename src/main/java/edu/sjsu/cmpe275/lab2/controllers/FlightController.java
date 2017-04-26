@@ -1,13 +1,27 @@
 package edu.sjsu.cmpe275.lab2.controllers;
 
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
+import org.json.JSONObject;
+import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,16 +29,121 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Plane;
+import edu.sjsu.cmpe275.lab2.model.Reservation;
 
 @RestController
-public class FlightController {
+public class FlightController<E> {
 	
 	@Autowired
 	private FlightDAO flightDAO;
+	
+	public ResponseEntity<E> redirectTo(URI location){
+		HttpHeaders headers = new HttpHeaders();
+		headers.setLocation(location);
+		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
+	}
+	//https://hostname/flight/flightNumber?xml=true
+	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET,produces={ "application/xml", "text/xml" })
+    public ResponseEntity<E> getFlightWithXmlReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="xml") boolean xmlFlag,HttpServletResponse response) throws Exception {
+		
+		Flight flight = flightDAO.findOne(flightNumber);
+		
+		if(flight==null){
+			URI location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
+
+			return redirectTo(location);
+		}
+		else{
+			JSONObject flightObj = new JSONObject();
+			flightObj.put("flightNumber", flight.getNumber());
+			flightObj.put("price", flight.getPrice());
+			flightObj.put("from", flight.getFrom());
+			flightObj.put("to", flight.getTo());
+			flightObj.put("departureTime", flight.getDepartureTime());
+			flightObj.put("arrivalTime", flight.getArrivalTime());
+			flightObj.put("description", flight.getDescription());
+			flightObj.put("seatsLeft", flight.getSeatsLeft());
+			
+			JSONObject planeObj = new JSONObject();
+			planeObj.put("capacity",flight.getPlane().getCapacity());
+			planeObj.put("model",flight.getPlane().getModel());
+			planeObj.put("manufacturer",flight.getPlane().getManufacturer());
+			planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
+			flightObj.put("plane", planeObj);
+			
+			JSONObject listOfPassengers = new JSONObject();
+			listOfPassengers.put("passenger", flight.getPassengers());
+			System.out.println(flight.getPassengers().size());
+		
+			flightObj.put("passengers", listOfPassengers);
+			JSONObject returnJsonVar = new JSONObject();
+			returnJsonVar.put("flight", flightObj);
+				
+			
+			return convertToXml(returnJsonVar);
+		}
+		
+
+	}
+	
+	//https://hostname/flight/flightNumber?json=true
+		@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
+	    public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json") boolean jsonFlag,HttpServletResponse response) throws Exception {
+			
+			Flight flight = flightDAO.findOne(flightNumber);
+			
+			if(flight==null){
+				URI location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
+
+				return redirectTo(location);
+			}
+			else{
+				JSONObject flightObj = new JSONObject();
+				flightObj.put("flightNumber", flight.getNumber());
+				flightObj.put("price", flight.getPrice());
+				flightObj.put("from", flight.getFrom());
+				flightObj.put("to", flight.getTo());
+				flightObj.put("departureTime", flight.getDepartureTime());
+				flightObj.put("arrivalTime", flight.getArrivalTime());
+				flightObj.put("description", flight.getDescription());
+				flightObj.put("seatsLeft", flight.getSeatsLeft());
+				
+				JSONObject planeObj = new JSONObject();
+				planeObj.put("capacity",flight.getPlane().getCapacity());
+				planeObj.put("model",flight.getPlane().getModel());
+				planeObj.put("manufacturer",flight.getPlane().getManufacturer());
+				planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
+				flightObj.put("plane", planeObj);
+				
+				JSONObject listOfPassengers = new JSONObject();
+				listOfPassengers.put("passenger", flight.getPassengers());
+				System.out.println(flight.getPassengers().size());
+			
+				flightObj.put("passengers", listOfPassengers);
+				JSONObject returnJsonVar = new JSONObject();
+				returnJsonVar.put("flight", flightObj);
+					
+				return convertToJSON(returnJsonVar);
+				
+			}
+			
+
+		}
+
+	
+	
 	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
 	@RequestMapping(value="/flight/{flight_number}",method = RequestMethod.POST)
 	public Flight createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
@@ -65,5 +184,34 @@ public class FlightController {
 			e.printStackTrace();
 		}
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
+	}
+	
+	public ResponseEntity<E> convertToXml(JSONObject returnJsonVar) throws DocumentException, IOException{
+		
+		String xml = XML.toString(returnJsonVar);
+		
+		//converting XML to pretty print format
+		Document document = DocumentHelper.parseText(xml);  
+        StringWriter stringWriter = new StringWriter();  
+        OutputFormat outputFormat = OutputFormat.createPrettyPrint();  
+        outputFormat.setIndent(true);
+        outputFormat.setIndentSize(3); 
+        outputFormat.setSuppressDeclaration(true);
+        outputFormat.setNewLineAfterDeclaration(false);
+        XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
+        xmlWriter.write(document);  
+        
+        //return stringWriter.toString();
+        return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
+	}
+	
+	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
+		
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		JsonParser jp = new JsonParser();
+		JsonElement je = jp.parse(returnJsonVar.toString());
+		String prettyJsonString = gson.toJson(je);
+		
+		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
 	}
 }
