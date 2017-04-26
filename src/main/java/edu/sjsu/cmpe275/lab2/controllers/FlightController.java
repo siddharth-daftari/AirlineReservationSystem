@@ -162,28 +162,47 @@ public class FlightController<E> {
 	}
 	
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
+	public ResponseEntity<E> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
 		
 		try {
 				Flight flight = new Flight();
 				flight.setNumber(flightNumber);
 				flight = flightDAO.findOne(flightNumber);
 				if(flight==null){
-					return ResponseEntity.status(404).body("Flight with number "+flightNumber+" does not exist");
+					URI location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
+
+					return redirectTo(location);
+
 				}
-				if(flight.getPassengers().isEmpty()){
-					flightDAO.delete(flight);
-					return ResponseEntity.status(HttpStatus.OK).body("Flight with number "+ flightNumber+" is deleted successfully");
+				if(!flight.getPassengers().isEmpty()){
+					
+					System.out.println("Need to send 400. Reservations exist.");
+					URI location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "You can not delete a flight that has one or more reservation").build().toUri();
+
+					return redirectTo(location);
 				}
 				else{
-					System.out.println("Need to send 400. Reservations exist.");
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not delete a flight that has one or more reservation");
+					flightDAO.delete(flight);
+					URI location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationErrorInXML").queryParam("code", "200").queryParam("msg", "Flight with id " + flightNumber + " is deleted successfully").build().toUri();
+
+					
+					return redirectTo(location);
+
+					
+					//return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not delete a flight that has one or more reservation");
 				}
 				
 		} catch (Exception e) {
+			URI location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Something went wrong").build().toUri();
+			
 			e.printStackTrace();
+			return redirectTo(location);
 		}
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
+		
 	}
 	
 	public ResponseEntity<E> convertToXml(JSONObject returnJsonVar) throws DocumentException, IOException{
