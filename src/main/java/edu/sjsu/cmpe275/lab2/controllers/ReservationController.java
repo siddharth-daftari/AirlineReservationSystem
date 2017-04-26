@@ -1,12 +1,20 @@
 package edu.sjsu.cmpe275.lab2.controllers;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
+import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +48,7 @@ public class ReservationController<E> {
 	private PassengerDAO passengerDAO;
 	
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
-    public @ResponseBody Reservation createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) {
+    public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
 		Reservation reservation = null;
 		try {
 			Passenger passenger = new Passenger();
@@ -69,7 +77,7 @@ public class ReservationController<E> {
 			e.printStackTrace();
 		}
 		
-		return reservation;
+		return convertToXml(generateReservationJSONObject(reservation));
 		
 	}
 	
@@ -79,6 +87,39 @@ public class ReservationController<E> {
 		
 		Reservation reservation = reservationDAO.findOne(orderNumber);
 		
+		return convertToJSON(generateReservationJSONObject(reservation));
+	}
+	
+		
+	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		JsonParser jp = new JsonParser();
+		JsonElement je = jp.parse(returnJsonVar.toString());
+		String prettyJsonString = gson.toJson(je);
+		
+		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
+	}
+	
+	public ResponseEntity<E> convertToXml(JSONObject returnJsonVar) throws DocumentException, IOException{
+		
+		String xml = XML.toString(returnJsonVar);
+		
+		//converting XML to pretty print format
+		Document document = DocumentHelper.parseText(xml);  
+        StringWriter stringWriter = new StringWriter();  
+        OutputFormat outputFormat = OutputFormat.createPrettyPrint();  
+        outputFormat.setIndent(true);
+        outputFormat.setIndentSize(3); 
+        outputFormat.setSuppressDeclaration(true);
+        outputFormat.setNewLineAfterDeclaration(false);
+        XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
+        xmlWriter.write(document);  
+        
+        //return stringWriter.toString();
+        return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
+	}
+	
+	public JSONObject generateReservationJSONObject(Reservation reservation){
 		JSONObject reservationObj = new JSONObject();
 		
 		reservationObj.put("orderNumber",reservation.getOrderNumber());
@@ -103,16 +144,6 @@ public class ReservationController<E> {
 		JSONObject returnJsonVar = new JSONObject();
 		returnJsonVar.put("reservation",reservationObj);
 		
-		return convertToJSON(returnJsonVar);
+		return returnJsonVar;
 	}
-	
-	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		JsonParser jp = new JsonParser();
-		JsonElement je = jp.parse(returnJsonVar.toString());
-		String prettyJsonString = gson.toJson(je);
-		
-		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
-	}
-	
 }
