@@ -98,8 +98,8 @@ public class FlightController<E> {
 	}
 	
 	//https://hostname/flight/flightNumber?json=true
-		@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
-	    public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json") boolean jsonFlag,HttpServletResponse response) throws Exception {
+	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
+	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json") boolean jsonFlag,HttpServletResponse response) throws Exception {
 			
 			Flight flight = flightDAO.findOne(flightNumber);
 			
@@ -146,14 +146,18 @@ public class FlightController<E> {
 	
 	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
 	@RequestMapping(value="/flight/{flight_number}",method = RequestMethod.POST)
-	public Flight createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
+	public ResponseEntity<E> createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
 		
 		Plane plane = new Plane(capacity,model,manufacturer,yearOfManufacture);
 		Flight flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
 		
 		try{
 			flightDAO.save(flight);
-			return flight;
+			URI location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("json", true).build().expand(flightNumber).toUri();
+			System.out.println(location);
+			return redirectTo(location);
+			//return flight;
 		}
 		catch (Exception e) {
 			e.printStackTrace();
