@@ -2,6 +2,7 @@ package edu.sjsu.cmpe275.lab2.controllers;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -46,6 +49,12 @@ public class ReservationController<E> {
 	//Reservation reservation = null;
 	@Autowired
 	private PassengerDAO passengerDAO;
+	
+	public ResponseEntity<E> redirectTo(URI location){
+		HttpHeaders headers = new HttpHeaders();
+		headers.setLocation(location);
+		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
+	}
 	
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
     public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
@@ -90,7 +99,35 @@ public class ReservationController<E> {
 		return convertToJSON(generateReservationJSONObject(reservation));
 	}
 	
+	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.DELETE)
+	public ResponseEntity<E> cancelReservation(@PathVariable(value = "order_number")String orderNumber){
+		//find the reservation
 		
+		Reservation reservation = new Reservation();
+		reservation = reservationDAO.findOne(orderNumber);
+		URI location = null;
+		if(reservation==null){
+			 location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested reservation with order number " + orderNumber + " does not exist").build().toUri();
+		
+		}
+		else{
+			for(Flight flight : reservation.getFlights()){
+				flight.setSeatsLeft(flight.getSeatsLeft()+1);
+				flight.getPassengers().remove(reservation.getPassenger());
+			}
+			
+			
+			reservationDAO.delete(reservation);
+			//passengerDAO.delete(reservation.getPassenger());
+			 location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationErrorInXML").queryParam("code", "200").queryParam("msg", "Reservation order number " + orderNumber + " is cancelled successfully").build().toUri();
+
+		}
+		
+		
+		return redirectTo(location);
+	}
 	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
@@ -118,6 +155,7 @@ public class ReservationController<E> {
         //return stringWriter.toString();
         return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
 	}
+	
 	
 	public JSONObject generateReservationJSONObject(Reservation reservation){
 		JSONObject reservationObj = new JSONObject();
