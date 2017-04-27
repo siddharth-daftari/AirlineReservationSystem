@@ -128,6 +128,63 @@ public class ReservationController<E> {
 		
 		return redirectTo(location);
 	}
+	
+	//https://hostname/reservation/number?flightsAdded=AA,BB,CC&flightsRemoved=XX,YY
+	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.POST)
+	public ResponseEntity<E> updateReservation(@PathVariable(value="order_number")String orderNumber,@RequestParam(value="flightsAdded", required=false) String[] flightsAdded,@RequestParam(value="flightsRemoved",required=false) String[] flightsRemoved) {
+		
+		Reservation reservation = reservationDAO.findOne(orderNumber);
+		Passenger passenger = passengerDAO.findOne(reservation.getPassenger().getId());
+		int reservationPrice = reservation.getPrice();
+		//TODO: check for time conflicts
+		if(flightsRemoved!=null){
+			System.out.println(flightsRemoved[0]);
+			for (String flightNumber : flightsRemoved) {
+				Flight flight = new Flight();
+				flight = flightDAO.findOne(flightNumber);
+												
+				//update the reservation price by adding the new flight price
+				reservationPrice= reservationPrice - flight.getPrice();
+				//remove the passenger
+				flight.setSeatsLeft(flight.getSeatsLeft()+1);
+				flight.getPassengers().remove(reservation.getPassenger());
+				reservation.getFlights().remove(flight);
+			}	
+		}
+		
+		
+		if(flightsAdded!=null){
+			System.out.println(flightsAdded[0]);
+			for (String flightNumber : flightsAdded) {
+				Flight flight = new Flight();
+				flight = flightDAO.findOne(flightNumber);
+				
+				flight.getPassengers().add(passenger);
+				flight.setSeatsLeft(flight.getSeatsLeft()-1);
+				
+				//update the reservation price by adding the new flight price
+				reservationPrice= reservationPrice + flight.getPrice();
+				reservation.getFlights().add(flight);
+				
+				
+			}	
+		}
+		//reservationDAO.save(reservation);
+		return convertToJSON(generateReservationJSONObject(reservation));
+		
+		
+	}
+	
+	
+	/*Work in progress*/
+	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",required=false) String passengerId, @RequestParam(value="from",required=false) String from, @RequestParam(value="to",required=false) String to,@RequestParam(value="flightNumber") String flightNumber){
+		
+		Reservation reservation = new Reservation();
+		ReservationDAO reservationDAO;
+		
+		return null;
+	}
+	
 	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
