@@ -53,8 +53,8 @@ public class FlightController<E> {
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	//https://hostname/flight/flightNumber?xml=true
-	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET,produces={ "application/xml", "text/xml" })
-    public ResponseEntity<E> getFlightWithXmlReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="xml") boolean xmlFlag,HttpServletResponse response) throws Exception {
+	@RequestMapping(value="/flightXML/{flight_number}", method=RequestMethod.GET)
+    public ResponseEntity<E> getFlightWithXmlReq(@PathVariable("flight_number") String flightNumber,HttpServletResponse response) throws Exception {
 		
 		Flight flight = flightDAO.findOne(flightNumber);
 		
@@ -99,51 +99,56 @@ public class FlightController<E> {
 	
 	//https://hostname/flight/flightNumber?json=true
 	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
-	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json") boolean jsonFlag,HttpServletResponse response) throws Exception {
+	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json",defaultValue="false") boolean jsonFlag,@RequestParam(value="xml",defaultValue="false") boolean xmlFlag,HttpServletResponse response) throws Exception {
 			
 			Flight flight = flightDAO.findOne(flightNumber);
-			
-			if(flight==null){
-				URI location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
+			if(jsonFlag){
+				if(flight==null){
+					URI location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
 
-				return redirectTo(location);
+					return redirectTo(location);
+				}
+				else{
+					JSONObject flightObj = new JSONObject();
+					flightObj.put("flightNumber", flight.getNumber());
+					flightObj.put("price", flight.getPrice());
+					flightObj.put("from", flight.getFrom());
+					flightObj.put("to", flight.getTo());
+					flightObj.put("departureTime", flight.getDepartureTime());
+					flightObj.put("arrivalTime", flight.getArrivalTime());
+					flightObj.put("description", flight.getDescription());
+					flightObj.put("seatsLeft", flight.getSeatsLeft());
+					
+					JSONObject planeObj = new JSONObject();
+					planeObj.put("capacity",flight.getPlane().getCapacity());
+					planeObj.put("model",flight.getPlane().getModel());
+					planeObj.put("manufacturer",flight.getPlane().getManufacturer());
+					planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
+					flightObj.put("plane", planeObj);
+					
+					JSONObject listOfPassengers = new JSONObject();
+					listOfPassengers.put("passenger", flight.getPassengers());
+					System.out.println(flight.getPassengers().size());
+				
+					flightObj.put("passengers", listOfPassengers);
+					JSONObject returnJsonVar = new JSONObject();
+					returnJsonVar.put("flight", flightObj);
+						
+					return convertToJSON(returnJsonVar);
+					
+				}
+
 			}
 			else{
-				JSONObject flightObj = new JSONObject();
-				flightObj.put("flightNumber", flight.getNumber());
-				flightObj.put("price", flight.getPrice());
-				flightObj.put("from", flight.getFrom());
-				flightObj.put("to", flight.getTo());
-				flightObj.put("departureTime", flight.getDepartureTime());
-				flightObj.put("arrivalTime", flight.getArrivalTime());
-				flightObj.put("description", flight.getDescription());
-				flightObj.put("seatsLeft", flight.getSeatsLeft());
-				
-				JSONObject planeObj = new JSONObject();
-				planeObj.put("capacity",flight.getPlane().getCapacity());
-				planeObj.put("model",flight.getPlane().getModel());
-				planeObj.put("manufacturer",flight.getPlane().getManufacturer());
-				planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
-				flightObj.put("plane", planeObj);
-				
-				JSONObject listOfPassengers = new JSONObject();
-				listOfPassengers.put("passenger", flight.getPassengers());
-				System.out.println(flight.getPassengers().size());
-			
-				flightObj.put("passengers", listOfPassengers);
-				JSONObject returnJsonVar = new JSONObject();
-				returnJsonVar.put("flight", flightObj);
-					
-				return convertToJSON(returnJsonVar);
-				
-			}
-			
+				URI location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/flightXML/"+flightNumber).build().toUri();
 
-		}
+				return redirectTo(location);
+			}		
 
-	
-	
+	}
+
 	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
 	@RequestMapping(value="/flight/{flight_number}",method = RequestMethod.POST)
 	public ResponseEntity<E> createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
@@ -154,7 +159,7 @@ public class FlightController<E> {
 		try{
 			flightDAO.save(flight);
 			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("json", true).build().expand(flightNumber).toUri();
+		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
 			System.out.println(location);
 			return redirectTo(location);
 			//return flight;

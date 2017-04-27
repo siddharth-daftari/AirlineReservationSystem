@@ -42,8 +42,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
+import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
+import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.JSONError;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
@@ -55,7 +57,10 @@ public class PassengerController<E> {
 	private PassengerDAO passengerDAO; 
 	
 	@Autowired
-	private ReservationDAO reservationDAO; 
+	private ReservationDAO reservationDAO;
+	
+	@Autowired
+	private FlightDAO flightDAO; 
 	
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
@@ -254,6 +259,21 @@ public class PassengerController<E> {
 			
 		}else{
 			passenger = listOfPassengers.get(0);
+			
+			//fetch reservations for this passenger
+			List<Reservation> reservationList = reservationDAO.findByPassenger(passenger);
+			for(Reservation reservation : reservationList){
+				//fetch every flight in this reservation
+				for(Flight flight:reservation.getFlights()){
+					int noOfPassengers = flight.getSeatsLeft();
+					if(noOfPassengers > 0){
+						noOfPassengers--;
+						flight.setSeatsLeft(noOfPassengers);
+					}
+				}
+				reservationDAO.delete(reservation);
+			}
+			
 			passengerDAO.delete(passenger);
 		}
 		//return new ModelAndView("forward:/passenger/" + passenger.getId() + "?json=true", model);
