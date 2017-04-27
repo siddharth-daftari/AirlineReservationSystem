@@ -6,11 +6,11 @@
 	<groupId>edu.sjsu.cmpe275</groupId>
 	<artifactId>airline-reservation-system</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 
 	<name>airline-reservation-system</name>
 	<description>Demo project for Spring Boot</description>
- 
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
