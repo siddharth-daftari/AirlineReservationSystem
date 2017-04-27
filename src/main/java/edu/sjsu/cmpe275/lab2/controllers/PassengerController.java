@@ -232,7 +232,7 @@ public class PassengerController<E> {
 			passenger.setFirstname(firstname);
 			passenger.setGender(gender);
 			passenger.setId(id);
-			passenger.setLastname(lastname);
+			passenger.setLastname(lastname); 
 			passenger.setPhone(phone);
 			
 			passengerDAO.save(passenger);

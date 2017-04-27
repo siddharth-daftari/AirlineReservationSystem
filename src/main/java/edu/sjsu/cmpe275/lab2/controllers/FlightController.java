@@ -56,7 +56,7 @@ public class FlightController<E> {
 	@RequestMapping(value="/flightXML/{flight_number}", method=RequestMethod.GET)
     public ResponseEntity<E> getFlightWithXmlReq(@PathVariable("flight_number") String flightNumber,HttpServletResponse response) throws Exception {
 		
-		Flight flight = flightDAO.findOne(flightNumber);
+		Flight flight = flightDAO.findOne(flightNumber); 
 		
 		if(flight==null){
 			URI location = ServletUriComponentsBuilder
