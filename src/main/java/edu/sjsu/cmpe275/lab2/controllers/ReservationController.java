@@ -68,16 +68,7 @@ public class ReservationController<E> {
 			
 			int price = 0;
 			
-			for (String flightNumber : flightList) {
-				Flight flight = new Flight();
-				flight = flightDAO.findOne(flightNumber);
-				flight.getPassengers().add(passenger);
-				flight.setSeatsLeft(flight.getSeatsLeft()-1);
-				flightLists.add(flight);
-				price+=flightDAO.findOne(flightNumber).getPrice();
-			}	
-			
-			
+				
 			
 			//check for the time conflict
 			int flag=0;
@@ -91,13 +82,7 @@ public class ReservationController<E> {
 					fl2 = flightDAO.findOne(flightList[j]);
 					Date fl2ArrivalTime = fl2.getArrivalTime();
 					Date fl2DeptTime = fl2.getDepartureTime();
-					/*
-					 * if(((bookedDepartureTime.compareTo(arrivalTime) >= 0) &&(bookedArrivalTime.compareTo(arrivalTime)<=0) ) ||((bookedArrivalTime.compareTo(departureTime)<=0) && (departureTime.compareTo(bookedDepartureTime)<=0)) ){
-						flag = 1;
-						conflictedFlightNumber =bookedFlights.getNumber();
-						break;
-					}
-					*/
+					
 					if(((fl1DeptTime.compareTo(fl2ArrivalTime) >= 0) &&(fl1ArrivalTime.compareTo(fl2ArrivalTime)<=0) ) ||((fl1ArrivalTime.compareTo(fl2DeptTime)<=0) && (fl2DeptTime.compareTo(fl1DeptTime)<=0)) ){
 						flag = 1;
 						break;
@@ -113,6 +98,23 @@ public class ReservationController<E> {
 			}
 			
 			
+			
+			/*
+			 * if there is no time conflict create the reservation.
+			*/
+			for (String flightNumber : flightList) {
+				Flight flight = new Flight();
+				flight = flightDAO.findOne(flightNumber);
+				if(flight.getSeatsLeft()==0){
+					location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+flightNumber+" is completely booked!").build().toUri();
+					return redirectTo(location);
+				}
+				flight.getPassengers().add(passenger);
+				flight.setSeatsLeft(flight.getSeatsLeft()-1);
+				flightLists.add(flight);
+				price+=flightDAO.findOne(flightNumber).getPrice();
+			}	
 			
 			
 			reservation = new Reservation(passenger, price, flightLists);

@@ -97,12 +97,12 @@ public class FlightController<E> {
 
 	}
 	
-	//https://hostname/flight/flightNumber?json=true
+	//https://hostname/flight/flightNumber
 	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
-	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber, @RequestParam(value="json",defaultValue="false") boolean jsonFlag,@RequestParam(value="xml",defaultValue="false") boolean xmlFlag,HttpServletResponse response) throws Exception {
+	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber,@RequestParam(value="xml",defaultValue="false",required=false) boolean xmlFlag,HttpServletResponse response) throws Exception {
 			
 			Flight flight = flightDAO.findOne(flightNumber);
-			if(jsonFlag){
+			if(!xmlFlag){
 				if(flight==null){
 					URI location = ServletUriComponentsBuilder
 				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
