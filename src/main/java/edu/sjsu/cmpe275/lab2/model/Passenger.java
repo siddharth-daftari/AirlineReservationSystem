@@ -46,7 +46,6 @@ public class Passenger {
 		this.phone = phone;
 	}
 	
-	
 	public String getId() {
 		return id;
 	}
@@ -83,6 +82,7 @@ public class Passenger {
 	public void setPhone(String phone) {
 		this.phone = phone;
 	}
+	
 	
 
 }

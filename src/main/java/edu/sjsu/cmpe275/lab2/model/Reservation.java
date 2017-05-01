@@ -20,6 +20,9 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+
 import java.util.List;
 
 @Entity
@@ -34,7 +37,7 @@ public class Reservation {
 	@GenericGenerator(name="system-uuid", strategy = "uuid")
 	private String orderNumber;
 	
-	@ManyToOne(optional=false, fetch=FetchType.EAGER)
+	@ManyToOne(optional=false, fetch=FetchType.LAZY)
 	@JoinColumn(name="PASSENGER_ID")
 	private Passenger passenger;
 	
@@ -48,15 +51,12 @@ public class Reservation {
 	public Reservation() {
 	}
 	
-	
-	
 	public Reservation(Passenger passenger, int price, List<Flight> flights) {
 		super();
 		this.passenger = passenger;
 		this.price = price;
 		this.flights = flights;
 	}
-
 
 	public String getOrderNumber() {
 		return orderNumber;
@@ -82,5 +82,5 @@ public class Reservation {
 	public void setFlights(List<Flight> flights) {
 		this.flights = flights;
 	}
-
 }
+

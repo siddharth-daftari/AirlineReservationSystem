@@ -21,61 +21,41 @@ import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.GenericGenerator;
 
-@Entity
-@Table(name="FLIGHT")
-public class Flight {
-		/*@Id
-		@Column(name="FLIGHT_NUMBER")*/
-		@Id 
-		@Column(name="FLIGHT_NUMBER")
+public class FlightForGetPassengers {
+	
 	   	private String number; // Each flight has a unique flight number.
 		
-		@Column(name="PRICE")
 		private int price;
-		@Column(name="SOURCE")
+		
 	    private String from;
-		@Column(name="DESTINATION")
+		
 	    private String to;
-
-	    /*  Date format: yy-mm-dd-hh, do not include minutes and sceonds.
-	    ** Example: 2017-03-22-19
-	    The system only needs to supports PST. You can ignore other time zones.  */
-		@Column(name="DEPARTURE_TIME")
+		
 		private Date departureTime;
-		@Column(name="ARRIVAL_TIME")
+		
 	    private Date arrivalTime;
-		@Column(name="SEATS_LEFT")
+		
 	    private int seatsLeft; 
-		@Column(name="DESCRIPTION")
+		
 	    private String description;
 		
-
-		//@JoinColumn(name="PLANE_ID")
-		@Embedded		
 	    private Plane plane;  // Embedded
 	     
-		public Flight() {
+		public FlightForGetPassengers() {
 			super();
 		}
 		
-		@ManyToMany(cascade=CascadeType.ALL)
-		@JoinTable(name = "FLIGHT_PASSENGER", joinColumns = { @JoinColumn(name = "FLIGHT_NUMBER") }, inverseJoinColumns = { @JoinColumn(name = "PASSENGER_ID") })
-		private List<Passenger> passengers;
-		
-		
-		public Flight(String number, int price, String from, String to, Date departureTime, Date arrivalTime,
-				int seatsLeft, String description, Plane plane, List<Passenger> passengers) {
-			super();
-			this.number = number;
-			this.price = price;
-			this.from = from;
-			this.to = to;
-			this.departureTime = departureTime;
-			this.arrivalTime = arrivalTime;
-			this.seatsLeft = seatsLeft;
-			this.description = description;
-			this.plane = plane;
-			this.passengers = passengers;
+		public FlightForGetPassengers(Flight flight) {
+			
+			this.number = flight.getNumber();
+			this.price = flight.getPrice();
+			this.from = flight.getFrom();
+			this.to = flight.getTo();
+			this.departureTime = flight.getDepartureTime();
+			this.arrivalTime = flight.getArrivalTime();
+			this.seatsLeft = flight.getSeatsLeft();
+			this.description = flight.getDescription();
+			this.plane = flight.getPlane();
 		}
 		public String getNumber() {
 			return number;
@@ -130,12 +110,6 @@ public class Flight {
 		}
 		public void setPlane(Plane plane) {
 			this.plane = plane;
-		}
-		public List<Passenger> getPassengers() {
-			return passengers;
-		}
-		public void setPassengers(List<Passenger> passengers) {
-			this.passengers = passengers;
 		}
 	    
 }
