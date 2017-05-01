@@ -62,7 +62,7 @@ public class ReservationController<E> {
 		try {
 			Passenger passenger = new Passenger();
 			passenger = passengerDAO.findOne(passengerId);
-			
+			URI location;
 			List<Flight> flightLists = new ArrayList<Flight>();
 			
 			
@@ -76,6 +76,45 @@ public class ReservationController<E> {
 				flightLists.add(flight);
 				price+=flightDAO.findOne(flightNumber).getPrice();
 			}	
+			
+			
+			
+			//check for the time conflict
+			int flag=0;
+			for(int i=0; i<flightList.length;i++){
+				Flight fl1 = new Flight();
+				fl1 = flightDAO.findOne(flightList[i]);
+				Date fl1ArrivalTime = fl1.getArrivalTime();
+				Date fl1DeptTime = fl1.getDepartureTime();
+				for(int j=i+1;j<flightList.length;j++){
+					Flight fl2 = new Flight();
+					fl2 = flightDAO.findOne(flightList[j]);
+					Date fl2ArrivalTime = fl2.getArrivalTime();
+					Date fl2DeptTime = fl2.getDepartureTime();
+					/*
+					 * if(((bookedDepartureTime.compareTo(arrivalTime) >= 0) &&(bookedArrivalTime.compareTo(arrivalTime)<=0) ) ||((bookedArrivalTime.compareTo(departureTime)<=0) && (departureTime.compareTo(bookedDepartureTime)<=0)) ){
+						flag = 1;
+						conflictedFlightNumber =bookedFlights.getNumber();
+						break;
+					}
+					*/
+					if(((fl1DeptTime.compareTo(fl2ArrivalTime) >= 0) &&(fl1ArrivalTime.compareTo(fl2ArrivalTime)<=0) ) ||((fl1ArrivalTime.compareTo(fl2DeptTime)<=0) && (fl2DeptTime.compareTo(fl1DeptTime)<=0)) ){
+						flag = 1;
+						break;
+					}
+				}
+				if(flag==1){
+					System.out.println(" Flight can't be added ");
+					
+					location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap in the flights").build().toUri();
+					return redirectTo(location);
+				}
+			}
+			
+			
+			
+			
 			reservation = new Reservation(passenger, price, flightLists);
 			
 			reservation = reservationDAO.save(reservation);
