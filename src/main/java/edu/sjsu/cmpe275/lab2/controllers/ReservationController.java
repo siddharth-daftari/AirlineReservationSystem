@@ -136,40 +136,95 @@ public class ReservationController<E> {
 		Reservation reservation = reservationDAO.findOne(orderNumber);
 		Passenger passenger = passengerDAO.findOne(reservation.getPassenger().getId());
 		int reservationPrice = reservation.getPrice();
+		URI location;
 		//TODO: check for time conflicts
+		
 		if(flightsRemoved!=null){
-			System.out.println(flightsRemoved[0]);
+			//TODO: check for empty list
+			if(flightsRemoved.length==0){
+				location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsRemoved list cannot be empty").build().toUri();
+				return redirectTo(location);
+			}
+			//System.out.println(flightsRemoved[0]);
 			for (String flightNumber : flightsRemoved) {
-				Flight flight = new Flight();
-				flight = flightDAO.findOne(flightNumber);
-												
+				Flight removedflight = new Flight();
+				removedflight = flightDAO.findOne(flightNumber);
+				
 				//update the reservation price by adding the new flight price
-				reservationPrice= reservationPrice - flight.getPrice();
+				reservationPrice= reservationPrice - removedflight.getPrice();
+				//update the seats left
+				removedflight.setSeatsLeft(removedflight.getSeatsLeft()+1);
 				//remove the passenger
-				flight.setSeatsLeft(flight.getSeatsLeft()+1);
-				flight.getPassengers().remove(reservation.getPassenger());
-				reservation.getFlights().remove(flight);
+				removedflight.getPassengers().remove(reservation.getPassenger());
+				//remove the flight from the reservation
+				reservation.getFlights().remove(removedflight);
 			}	
+			reservation.setPrice(reservationPrice);
 		}
 		
-		
+			
 		if(flightsAdded!=null){
-			System.out.println(flightsAdded[0]);
+			if(flightsAdded.length==0){
+				location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsAdded list cannot be empty.").build().toUri();
+				return redirectTo(location);
+			}
+			System.out.println("Flight added are there");
 			for (String flightNumber : flightsAdded) {
-				Flight flight = new Flight();
-				flight = flightDAO.findOne(flightNumber);
+				System.out.println("Flight "+flightNumber);
+				Flight addedflight = new Flight();
+				addedflight = flightDAO.findOne(flightNumber);
+				//check if plane capacity exceeds or not
+				if(addedflight.getSeatsLeft()==0){
+					location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+flightNumber+" is completely booked!").build().toUri();
+					return redirectTo(location);
+				}
 				
-				flight.getPassengers().add(passenger);
-				flight.setSeatsLeft(flight.getSeatsLeft()-1);
 				
-				//update the reservation price by adding the new flight price
-				reservationPrice= reservationPrice + flight.getPrice();
-				reservation.getFlights().add(flight);
-				
-				
+				Date arrivalTime = addedflight.getArrivalTime();
+				Date departureTime = addedflight.getDepartureTime();
+				int flag =0;
+				String conflictedFlightNumber="";
+				for(Flight bookedFlights : reservation.getFlights()){
+					
+					Date bookedArrivalTime = bookedFlights.getArrivalTime();
+					Date bookedDepartureTime = bookedFlights.getDepartureTime();
+					
+					if(((bookedDepartureTime.compareTo(arrivalTime) >= 0) &&(bookedArrivalTime.compareTo(arrivalTime)<=0) ) ||((bookedArrivalTime.compareTo(departureTime)<=0) && (departureTime.compareTo(bookedDepartureTime)<=0)) ){
+						flag = 1;
+						conflictedFlightNumber =bookedFlights.getNumber();
+						break;
+					}
+				}
+				System.out.println(flag);
+				if(flag == 1){
+					//Time overlap. Send 404
+					System.out.println(" Flight can't be added ");
+					
+					location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber).build().toUri();
+					return redirectTo(location);
+					
+				} else{
+					System.out.println("Adding passenger to flight");
+					//add the passenger to the flight
+					addedflight.getPassengers().add(passenger);
+					//update the seats
+					System.out.println("Updating the seats flight");
+					
+					addedflight.setSeatsLeft(addedflight.getSeatsLeft()-1);
+					//update the reservation price by adding the new flight price
+					reservationPrice= reservationPrice + addedflight.getPrice();
+					//add the flight to the reservation
+					System.out.println("Updating the flights");
+					reservation.getFlights().add(addedflight);				
+				}
 			}	
+			reservation.setPrice(reservationPrice);
 		}
-		//reservationDAO.save(reservation);
+		reservationDAO.save(reservation);
 		return convertToJSON(generateReservationJSONObject(reservation));
 		
 		
