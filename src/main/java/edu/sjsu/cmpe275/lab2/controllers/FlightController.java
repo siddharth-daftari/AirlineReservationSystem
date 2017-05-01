@@ -154,11 +154,53 @@ public class FlightController<E> {
 	public ResponseEntity<E> createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
 		
 		Plane plane = new Plane(capacity,model,manufacturer,yearOfManufacture);
-		Flight flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
+		Flight flight = flightDAO.findOne(flightNumber); 
+		URI location;
+		if(flight==null){
+			 flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
+		}else{
+			//set the price. It does not affect the previous reservations. 
+			flight.setPrice(price);
+			System.out.println("Flight exists. So updating");
+			//set the plane. check the capacity of the plane
+			//if capacity is increasing add the difference in the seatsLeft
+			//if reducing, check. reservations < new capacity == true.
+			
+			int originalCapacity = flight.getPlane().getCapacity();
+			int activeReservations = originalCapacity-flight.getSeatsLeft();
+			System.out.println(capacity);
+			System.out.println(originalCapacity);
+			if(capacity > originalCapacity){
+				flight.getPlane().setCapacity(capacity);
+				flight.setSeatsLeft(capacity-activeReservations);
+				System.out.println("Capcity greater than original");
+			}
+			else{
+				
+					System.out.println("Capcity less than original");
+					if(capacity<flight.getPassengers().size()){
+						//throw exception.
+						System.out.println("Capcity less than res");
+						location = ServletUriComponentsBuilder
+					            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Active reservation count for this flight is higher than the target capacity").build().toUri();
+
+						return redirectTo(location);
+					}
+					else{
+						flight.getPlane().setCapacity(capacity);
+						flight.setSeatsLeft(capacity-activeReservations);
+					}
+				
+			}
+		}
+		
+		
+		
+		//TODO: Check if the flight exists. If yes, update values. else save flight.
 		
 		try{
 			flightDAO.save(flight);
-			URI location = ServletUriComponentsBuilder
+			location = ServletUriComponentsBuilder
 		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
 			System.out.println(location);
 			return redirectTo(location);
