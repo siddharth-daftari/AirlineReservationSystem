@@ -33,7 +33,7 @@ public class FlightForGetPassengers {
 		
 		private Date departureTime;
 		
-	    private Date arrivalTime;
+	    private Date arrivalTime; 
 		
 	    private int seatsLeft; 
 		
