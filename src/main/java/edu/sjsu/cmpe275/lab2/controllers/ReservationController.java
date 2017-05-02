@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletResponse;
 
 import org.dom4j.Document;
@@ -17,9 +21,11 @@ import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,8 +43,11 @@ import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
 import edu.sjsu.cmpe275.lab2.model.Flight;
+import edu.sjsu.cmpe275.lab2.model.Flight_;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
+import edu.sjsu.cmpe275.lab2.model.Passenger_;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
+import edu.sjsu.cmpe275.lab2.model.Reservation_;
 
 @RestController
 public class ReservationController<E> {
@@ -272,12 +281,41 @@ public class ReservationController<E> {
 	}
 	
 	
-	/*Work in progress*/
-	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",required=false) String passengerId, @RequestParam(value="from",required=false) String from, @RequestParam(value="to",required=false) String to,@RequestParam(value="flightNumber") String flightNumber){
+	@RequestMapping(value="/reservation",method=RequestMethod.GET)
+	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",defaultValue="") String passengerId, @RequestParam(value="from",defaultValue="") String from, @RequestParam(value="to",defaultValue="") String to,@RequestParam(value="flightNumber",defaultValue="") String flightNumber){
 		
-		Reservation reservation = new Reservation();
-		ReservationDAO reservationDAO;
 		
+		
+		Specification spec = new Specification<Reservation>() {
+		    
+			
+			@Override
+			public Predicate toPredicate(Root<Reservation> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
+				
+				List<Predicate> predicates = new ArrayList<>();
+
+			    if (!"".equalsIgnoreCase(passengerId)) {
+			      //predicates.add(cb.like(root.get(Reservation_.passenger).get(Passenger_.id), passengerId + "%"));
+			    	predicates.add(cb.equal(root.get(Reservation_.passenger).get(Passenger_.id), passengerId ));
+			    }
+			    
+			    if (!"".equalsIgnoreCase(from)) {
+			    	
+				      predicates.add(cb.equal(root.join(Reservation_.flights).get(Flight_.from), from + "%"));
+				    }
+			    
+			    return andTogether(predicates, cb);
+			}
+			private Predicate andTogether(List<Predicate> predicates, CriteriaBuilder cb) {
+				
+			    return cb.and(predicates.toArray(new Predicate[0]));
+			}
+		};
+		
+		List<Reservation> reservationList = reservationDAO.findAll(spec);
+		for(Reservation r : reservationList){
+			System.out.println(r.getOrderNumber());
+		}
 		return null;
 	}
 	
