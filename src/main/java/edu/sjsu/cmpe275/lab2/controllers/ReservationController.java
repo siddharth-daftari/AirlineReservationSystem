@@ -9,6 +9,7 @@ import java.util.List;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletResponse;
@@ -293,7 +294,9 @@ public class ReservationController<E> {
 			public Predicate toPredicate(Root<Reservation> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
 				
 				List<Predicate> predicates = new ArrayList<>();
-
+				
+				Join<Reservation,Flight> joinRoot = root.join(Reservation_.flights);
+				
 			    if (!"".equalsIgnoreCase(passengerId)) {
 			      //predicates.add(cb.like(root.get(Reservation_.passenger).get(Passenger_.id), passengerId + "%"));
 			    	predicates.add(cb.equal(root.get(Reservation_.passenger).get(Passenger_.id), passengerId ));
@@ -301,18 +304,31 @@ public class ReservationController<E> {
 			    
 			    if (!"".equalsIgnoreCase(from)) {
 			    	
-				      predicates.add(cb.equal(root.join(Reservation_.flights).get(Flight_.from), from + "%"));
-				    }
+			    	predicates.add(cb.equal(joinRoot.get(Flight_.from), from));
+				}
 			    
+				if (!"".equalsIgnoreCase(to)) {
+							    	
+			    	predicates.add(cb.equal(joinRoot.get(Flight_.to), to));
+				}
+				
+				if (!"".equalsIgnoreCase(flightNumber)) {
+			    	
+			    	predicates.add(cb.equal(joinRoot.get(Flight_.number), flightNumber ));
+				}
+				cq.distinct(true);
 			    return andTogether(predicates, cb);
 			}
+			
 			private Predicate andTogether(List<Predicate> predicates, CriteriaBuilder cb) {
 				
 			    return cb.and(predicates.toArray(new Predicate[0]));
 			}
 		};
 		
+		//reservationList contains the result
 		List<Reservation> reservationList = reservationDAO.findAll(spec);
+		
 		for(Reservation r : reservationList){
 			System.out.println(r.getOrderNumber());
 		}
