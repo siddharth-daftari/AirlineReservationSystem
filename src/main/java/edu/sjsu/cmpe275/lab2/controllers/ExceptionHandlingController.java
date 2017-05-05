@@ -53,7 +53,7 @@ public class ExceptionHandlingController<E> {
 		JsonElement je = jp.parse(outputJsonObj.toString());
 		String prettyJsonString = gson.toJson(je);
 		
-		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
+		return new ResponseEntity(prettyJsonString,HttpStatus.valueOf(Integer.parseInt(code)));
 	}
 	
 	@RequestMapping("/applicationErrorInXML")

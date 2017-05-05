@@ -3,6 +3,7 @@ import java.util.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,6 +48,7 @@ import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Flight_;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
 import edu.sjsu.cmpe275.lab2.model.Passenger_;
+import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
 import edu.sjsu.cmpe275.lab2.model.Reservation_;
 
@@ -147,7 +149,65 @@ public class ReservationController<E> {
 		
 		Reservation reservation = reservationDAO.findOne(orderNumber);
 		
-		return convertToJSON(generateReservationJSONObject(reservation));
+		if(reservation==null){
+			
+			URI location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Reserveration with number " + orderNumber + " does not exist ").build().toUri();
+
+			return redirectTo(location);
+		}else{
+			
+			JSONObject returnJsonVar = new JSONObject();
+			JSONObject reservationTempJSON = new JSONObject();
+			
+			List<Flight> listOfFlight = reservation.getFlights();
+			
+			reservationTempJSON.put("orderNumber",reservation.getOrderNumber());
+			reservationTempJSON.put("price", Integer.toString(reservation.getPrice()));
+			
+			JSONObject passengerJSON = new JSONObject();
+			Passenger passenger = reservation.getPassenger();
+			passengerJSON.put("id", passenger.getId());
+			passengerJSON.put("firstname", passenger.getFirstname());
+			passengerJSON.put("lastname", passenger.getLastname());
+			passengerJSON.put("age", Integer.toString(passenger.getAge()));
+			passengerJSON.put("gender", passenger.getGender());
+			passengerJSON.put("phone", passenger.getPhone());
+			
+			reservationTempJSON.put("passenger", passengerJSON);
+			
+			List<JSONObject> flightListJSONVar = new ArrayList<JSONObject>();
+			for(Flight currFlight: listOfFlight){
+				JSONObject flightTempJSON = new JSONObject();
+				flightTempJSON.put("number", currFlight.getNumber());
+				flightTempJSON.put("price", Integer.toString(currFlight.getPrice()));
+				flightTempJSON.put("from", currFlight.getFrom());
+				flightTempJSON.put("to", currFlight.getTo());
+				flightTempJSON.put("departureTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(currFlight.getDepartureTime()));
+				flightTempJSON.put("arrivalTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(currFlight.getArrivalTime()));
+				flightTempJSON.put("description", currFlight.getDescription());
+				flightTempJSON.put("seatsLeft", Integer.toString(currFlight.getSeatsLeft()));
+				
+				JSONObject planeJSONVar = new JSONObject();
+				Plane plane = currFlight.getPlane();
+				
+				planeJSONVar.put("capacity", plane.getCapacity());
+				planeJSONVar.put("model", plane.getModel());
+				planeJSONVar.put("manufacturer", plane.getManufacturer());
+				planeJSONVar.put("yearOfManufacture", Integer.toString(plane.getYearOfManufacture()));
+				
+				flightTempJSON.put("plane", planeJSONVar);
+				
+				flightListJSONVar.add(flightTempJSON);
+			}
+			
+			JSONObject flightTemp = new JSONObject();
+			flightTemp.put("flight",flightListJSONVar);
+			reservationTempJSON.put("flights",flightTemp);
+			returnJsonVar.put("reservation",reservationTempJSON );
+			
+			return convertToJSON(returnJsonVar);
+		}
 	}
 	
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.DELETE)
@@ -283,13 +343,10 @@ public class ReservationController<E> {
 	
 	
 	@RequestMapping(value="/reservation",method=RequestMethod.GET)
-	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",defaultValue="") String passengerId, @RequestParam(value="from",defaultValue="") String from, @RequestParam(value="to",defaultValue="") String to,@RequestParam(value="flightNumber",defaultValue="") String flightNumber){
-		
-		
+	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",defaultValue="") String passengerId, @RequestParam(value="from",defaultValue="") String from, @RequestParam(value="to",defaultValue="") String to,@RequestParam(value="flightNumber",defaultValue="") String flightNumber) throws DocumentException, IOException{
 		
 		Specification spec = new Specification<Reservation>() {
 		    
-			
 			@Override
 			public Predicate toPredicate(Root<Reservation> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
 				
@@ -329,10 +386,66 @@ public class ReservationController<E> {
 		//reservationList contains the result
 		List<Reservation> reservationList = reservationDAO.findAll(spec);
 		
+		JSONObject returnJsonVar = new JSONObject();
+		JSONObject reservationJSONVar = new JSONObject();
+		List<JSONObject> reservationListJSONVar = new ArrayList<JSONObject>();
+		
 		for(Reservation r : reservationList){
 			System.out.println(r.getOrderNumber());
 		}
-		return null;
+		
+		for(Reservation currReservation: reservationList){
+			JSONObject reservationTempJSON = new JSONObject();
+			List<Flight> listOfFlight = currReservation.getFlights();
+			
+			reservationTempJSON.put("orderNumber",currReservation.getOrderNumber());
+			reservationTempJSON.put("price", Integer.toString(currReservation.getPrice()));
+			
+			JSONObject passengerJSON = new JSONObject();
+			Passenger passenger = currReservation.getPassenger();
+			passengerJSON.put("id", passenger.getId());
+			passengerJSON.put("firstname", passenger.getFirstname());
+			passengerJSON.put("lastname", passenger.getLastname());
+			passengerJSON.put("age", Integer.toString(passenger.getAge()));
+			passengerJSON.put("gender", passenger.getGender());
+			passengerJSON.put("phone", passenger.getPhone());
+			
+			reservationTempJSON.put("passenger", passengerJSON);
+			
+			List<JSONObject> flightListJSONVar = new ArrayList<JSONObject>();
+			for(Flight currFlight: listOfFlight){
+				JSONObject flightTempJSON = new JSONObject();
+				flightTempJSON.put("number", currFlight.getNumber());
+				flightTempJSON.put("price", Integer.toString(currFlight.getPrice()));
+				flightTempJSON.put("from", currFlight.getFrom());
+				flightTempJSON.put("to", currFlight.getTo());
+				flightTempJSON.put("departureTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(currFlight.getDepartureTime()));
+				flightTempJSON.put("arrivalTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(currFlight.getArrivalTime()));
+				flightTempJSON.put("description", currFlight.getDescription());
+				
+				JSONObject planeJSONVar = new JSONObject();
+				Plane plane = currFlight.getPlane();
+				
+				planeJSONVar.put("capacity", plane.getCapacity());
+				planeJSONVar.put("model", plane.getModel());
+				planeJSONVar.put("manufacturer", plane.getManufacturer());
+				planeJSONVar.put("yearOfManufacture", Integer.toString(plane.getYearOfManufacture()));
+				
+				flightTempJSON.put("plane", planeJSONVar);
+				
+				flightListJSONVar.add(flightTempJSON);
+			}
+			
+			JSONObject flightTemp = new JSONObject();
+			flightTemp.put("flight",flightListJSONVar);
+			reservationTempJSON.put("flights",flightTemp);
+			
+			reservationListJSONVar.add(reservationTempJSON);
+		}
+		
+		reservationJSONVar.put("reservation",reservationListJSONVar );
+		returnJsonVar.put("reservations", reservationJSONVar);
+		return convertToXml(returnJsonVar);
 	}
 	
 	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
@@ -374,7 +487,7 @@ public class ReservationController<E> {
 		passenger.put("id",reservation.getPassenger().getId());
 		passenger.put("firstname",reservation.getPassenger().getFirstname());
 		passenger.put("lastname",reservation.getPassenger().getLastname());
-		passenger.put("age",reservation.getPassenger().getAge());
+		passenger.put("age",Integer.toString(reservation.getPassenger().getAge()));
 		passenger.put("gender",reservation.getPassenger().getGender());
 		passenger.put("phone",reservation.getPassenger().getPhone());
 		
