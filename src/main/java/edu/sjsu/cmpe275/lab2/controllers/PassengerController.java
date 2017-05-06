@@ -20,8 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,10 +39,12 @@ import com.google.gson.JsonParser;
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
+import edu.sjsu.cmpe275.lab2.model.CustomException;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
 import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
+
 
 @RestController
 public class PassengerController<E> {
@@ -60,6 +64,7 @@ public class PassengerController<E> {
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	
+	@Transactional
 	@RequestMapping(value="/passenger", method=RequestMethod.POST)
     public ResponseEntity<E> createPassenger(@RequestParam(value="firstname", defaultValue="firstname") String firstname, @RequestParam(value="lastname", defaultValue="lastname") String lastname, @RequestParam(value="age", defaultValue="0") int age, @RequestParam(value="gender", defaultValue="gender") String gender, @RequestParam(value="phone", defaultValue="phone") String phone, ModelMap model, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		Passenger passenger = null;
@@ -69,12 +74,7 @@ public class PassengerController<E> {
 		
 		if(listOfPassengers!=null && !listOfPassengers.isEmpty()){
 			
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "another passenger with the same number already exists.").build().toUri();
-
-			return redirectTo(location);
-			
-			//return new ModelAndView("/applicationError?" + "code=" + "400" + "&msg=" + "another passenger with the same number already exists.");
+			throw new CustomException("400", "another passenger with the same number already exists.");
 			
 		}else{
 			passenger = new Passenger(firstname,lastname, age, gender, phone);
@@ -89,6 +89,7 @@ public class PassengerController<E> {
 		return redirectTo(location);
 	}
 	
+	@Transactional
 	@RequestMapping(value="/passenger/{id}", method=RequestMethod.GET)
     public ResponseEntity<?> getPassengerWithJsonReq(@PathVariable("id") String id, @RequestParam(value="xml", defaultValue="false") boolean isXmlReq, HttpServletResponse response) throws Exception {
 		
@@ -99,10 +100,8 @@ public class PassengerController<E> {
 		
 		if(listOfPassengers==null || listOfPassengers.isEmpty()){
 			
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested passenger with id " + id + " does not exist").build().toUri();
-
-			return redirectTo(location);
+			throw new CustomException("404", "Sorry, the requested passenger with id " + id + " does not exist");
+			
 		}else{
 			passengerTemp = listOfPassengers.get(0);
 			List<Reservation> listOfReservation = reservationDAO.findByPassenger(passengerTemp);
@@ -191,7 +190,8 @@ public class PassengerController<E> {
 			
 		}
 	}
-	
+
+	@Transactional
 	@RequestMapping(value="/passenger/{id}", method=RequestMethod.PUT)
     public ResponseEntity<E> updatePassenger(@PathVariable("id") String id, @RequestParam(value="firstname", defaultValue="firstname") String firstname, @RequestParam(value="lastname", defaultValue="lastname") String lastname, @RequestParam(value="age", defaultValue="0") int age, @RequestParam(value="gender", defaultValue="gender") String gender, @RequestParam(value="phone", defaultValue="phone") String phone, ModelMap model, HttpServletResponse response) throws Exception {
 		Passenger passenger = null;
@@ -201,16 +201,13 @@ public class PassengerController<E> {
 		List<Passenger> listOfPassengersWithThePhone = passengerDAO.findByPhone(phone);
 		
 		if(listOfPassengersWithTheId==null || listOfPassengersWithTheId.isEmpty()){
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested passenger with id " + id + " does not exist").build().toUri();
-
-			return redirectTo(location);
+			
+			throw new CustomException("404", "Sorry, the requested passenger with id " + id + " does not exist");
 			
 		}else if (listOfPassengersWithThePhone!=null && !listOfPassengersWithThePhone.isEmpty() && !id.equalsIgnoreCase(listOfPassengersWithThePhone.get(0).getId())){
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Another passenger with the same number already exists.").build().toUri();
-
-			return redirectTo(location);
+			
+			throw new CustomException("400", "Another passenger with the same number already exists.");
+			
 		}else{
 			passenger = listOfPassengersWithTheId.get(0);
 			passenger.setAge(age);
@@ -238,10 +235,7 @@ public class PassengerController<E> {
 		List<Passenger> listOfPassengers = passengerDAO.findById(id);
 		
 		if(listOfPassengers==null || listOfPassengers.isEmpty()){
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Passenger with id " + id + " does not exist").build().toUri();
-
-			return redirectTo(location);
+			throw new CustomException("404", "Passenger with id " + id + " does not exist");
 			
 		}else{
 			passenger = listOfPassengers.get(0);
@@ -267,6 +261,15 @@ public class PassengerController<E> {
 		//return new ModelAndView("forward:/passenger/" + passenger.getId() + "?json=true", model);
 		URI location = ServletUriComponentsBuilder
 	            .fromCurrentServletMapping().path("/applicationErrorInXML").queryParam("code", "200").queryParam("msg", "Passenger with id " + id + " is deleted successfully").build().toUri();
+
+		return redirectTo(location);
+	}
+	
+	@ExceptionHandler(value = CustomException.class)
+	public ResponseEntity<E> customeExceptionHandler(CustomException e){
+		
+		URI location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/applicationError").queryParam("code", e.getCode()).queryParam("msg", e.getMsg()).build().toUri();
 
 		return redirectTo(location);
 	}

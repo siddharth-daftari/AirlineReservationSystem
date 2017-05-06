@@ -24,7 +24,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -41,6 +43,7 @@ import com.google.gson.JsonParser;
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
+import edu.sjsu.cmpe275.lab2.model.CustomException;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Flight_;
 import edu.sjsu.cmpe275.lab2.model.Passenger;
@@ -65,6 +68,7 @@ public class ReservationController<E> {
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	
+	@Transactional
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
 	public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
 		Reservation reservation = null;
@@ -128,18 +132,13 @@ public class ReservationController<E> {
 					if(!(flight.equals(flightTemp)) && (newArrivalTime.before(flightTemp.getDepartureTime()) || newDepartureTime.after(flightTemp.getArrivalTime()))){
 					
 					}else{
-						location = ServletUriComponentsBuilder
-					            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Sorry, there is a time overlap in the flights.").build().toUri();
-
-						return redirectTo(location);
+						throw new CustomException("400","Sorry, there is a time overlap in the flights.");
 					}
 					
 				}
 				//check for seats left
 				if(flight.getSeatsLeft()==0){
-					location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+ flight.getNumber() +" is completely booked!").build().toUri();
-					return redirectTo(location);
+					throw new CustomException("404", "Sorry, flight "+ flight.getNumber() +" is completely booked!");
 				}
 				
 				//both criteria satisfied
@@ -156,9 +155,7 @@ public class ReservationController<E> {
 						
 		}catch(Exception e){
 			e.printStackTrace();
-			location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Sorry, something went wrong.").build().toUri();
-			return redirectTo(location);
+			throw new CustomException("500", "Sorry, something went wrong.");
 		}
 		
 		location = ServletUriComponentsBuilder
@@ -168,6 +165,7 @@ public class ReservationController<E> {
 	}
 	
 	//https://hostname/reservation/number
+	@Transactional
 	@RequestMapping(value="/reservation/{number}", method=RequestMethod.GET)
 	public ResponseEntity<E> getReservationJSON(@PathVariable("number") String orderNumber, @RequestParam(value="xml", defaultValue="false") boolean isXmlReq, HttpServletResponse response) throws Exception{
 		
@@ -175,10 +173,7 @@ public class ReservationController<E> {
 		
 		if(reservation==null){
 			
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Reserveration with number " + orderNumber + " does not exist ").build().toUri();
-
-			return redirectTo(location);
+			throw new CustomException("404", "Reserveration with number " + orderNumber + " does not exist ");
 		}else{
 			
 			JSONObject returnJsonVar = new JSONObject();
@@ -257,6 +252,7 @@ public class ReservationController<E> {
 		}
 	}
 	
+	@Transactional
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> cancelReservation(@PathVariable(value = "order_number")String orderNumber){
 		//find the reservation
@@ -265,8 +261,7 @@ public class ReservationController<E> {
 		reservation = reservationDAO.findOne(orderNumber);
 		URI location = null;
 		if(reservation==null){
-			 location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Reservation with number " + orderNumber + " does not exist ").build().toUri();
+			throw new CustomException("404", "Reservation with number " + orderNumber + " does not exist ");
 		
 		}
 		else{
@@ -288,6 +283,7 @@ public class ReservationController<E> {
 	}
 	
 	//https://hostname/reservation/number?flightsAdded=AA,BB,CC&flightsRemoved=XX,YY
+	@Transactional
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.POST)
 	public ResponseEntity<E> updateReservation(@PathVariable(value="order_number")String orderNumber,@RequestParam(value="flightsAdded", required=false) String[] flightsAdded,@RequestParam(value="flightsRemoved",required=false) String[] flightsRemoved) {
 		
@@ -300,9 +296,7 @@ public class ReservationController<E> {
 		if(flightsRemoved!=null){
 			//TODO: check for empty list
 			if(flightsRemoved.length==0){
-				location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsRemoved list cannot be empty").build().toUri();
-				return redirectTo(location);
+				throw new CustomException("404", "Sorry, flightsRemoved list cannot be empty");
 			}
 			//System.out.println(flightsRemoved[0]);
 			for (String flightNumber : flightsRemoved) {
@@ -324,9 +318,7 @@ public class ReservationController<E> {
 			
 		if(flightsAdded!=null){
 			if(flightsAdded.length==0){
-				location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsAdded list cannot be empty.").build().toUri();
-				return redirectTo(location);
+				throw new CustomException("404", "Sorry, flightsAdded list cannot be empty.");
 			}
 			System.out.println("Flight added are there");
 			for (String flightNumber : flightsAdded) {
@@ -335,9 +327,7 @@ public class ReservationController<E> {
 				addedflight = flightDAO.findOne(flightNumber);
 				//check if plane capacity exceeds or not
 				if(addedflight.getSeatsLeft()==0){
-					location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+flightNumber+" is completely booked!").build().toUri();
-					return redirectTo(location);
+					throw new CustomException("404", "Sorry, flight "+flightNumber+" is completely booked!");
 				}
 				
 				
@@ -361,9 +351,7 @@ public class ReservationController<E> {
 					//Time overlap. Send 404
 					System.out.println(" Flight can't be added ");
 					
-					location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber).build().toUri();
-					return redirectTo(location);
+					throw new CustomException("404", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber);
 					
 				} else{
 					System.out.println("Adding passenger to flight");
@@ -388,7 +376,7 @@ public class ReservationController<E> {
 		
 	}
 	
-	
+	@Transactional
 	@RequestMapping(value="/reservation",method=RequestMethod.GET)
 	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",defaultValue="") String passengerId, @RequestParam(value="from",defaultValue="") String from, @RequestParam(value="to",defaultValue="") String to,@RequestParam(value="flightNumber",defaultValue="") String flightNumber) throws DocumentException, IOException{
 		
@@ -550,5 +538,14 @@ public class ReservationController<E> {
 		returnJsonVar.put("reservation",reservationObj);
 		
 		return returnJsonVar;
+	}
+	
+	@ExceptionHandler(value = CustomException.class)
+	public ResponseEntity<E> customeExceptionHandler(CustomException e){
+		
+		URI location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/applicationError").queryParam("code", e.getCode()).queryParam("msg", e.getMsg()).build().toUri();
+
+		return redirectTo(location);
 	}
 }

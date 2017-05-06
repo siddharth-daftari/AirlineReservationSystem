@@ -34,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -48,6 +49,7 @@ import com.google.gson.JsonParser;
 
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
+import edu.sjsu.cmpe275.lab2.model.CustomException;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Flight_;
 import edu.sjsu.cmpe275.lab2.model.Passenger_;
@@ -72,6 +74,7 @@ public class FlightController<E> {
 	
 	
 	//https://hostname/flight/flightNumber
+	@Transactional
 	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
 	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber,@RequestParam(value="xml",defaultValue="false",required=false) boolean xmlFlag,HttpServletResponse response) throws Exception {
 			
@@ -79,10 +82,7 @@ public class FlightController<E> {
 			JSONObject returnJsonVar = new JSONObject();
 			
 			if(flight==null){
-				URI location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
-
-				return redirectTo(location);
+				throw new CustomException("404", "Sorry, the requested flight with flight number " + flightNumber + " does not exist");
 			}
 			else{
 				JSONObject flightObj = new JSONObject();
@@ -156,10 +156,7 @@ public class FlightController<E> {
 					if(capacity<flight.getPassengers().size()){
 						//throw exception.
 						System.out.println("Capcity less than res");
-						location = ServletUriComponentsBuilder
-					            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Active reservation count for this flight is higher than the target capacity").build().toUri();
-
-						return redirectTo(location);
+						throw new CustomException("400", "Active reservation count for this flight is higher than the target capacity");
 					}
 					else{
 						seatsLeft = capacity-activeReservations;
@@ -208,10 +205,7 @@ public class FlightController<E> {
 							
 						}else{
 						
-							location = ServletUriComponentsBuilder
-						            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Cannot update the flight. Updated time interval is in conflict with existing reservations.").build().toUri();
-
-							return redirectTo(location);
+							throw new CustomException("400", "Cannot update the flight. Updated time interval is in conflict with existing reservations.");
 						}
 					}
 				}
@@ -239,6 +233,7 @@ public class FlightController<E> {
 		
 	}
 	
+	@Transactional
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
 		
@@ -247,19 +242,11 @@ public class FlightController<E> {
 				flight.setNumber(flightNumber);
 				flight = flightDAO.findOne(flightNumber);
 				if(flight==null){
-					URI location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
-
-					return redirectTo(location);
-
+					throw new CustomException("404", "Sorry, the requested flight with flight number " + flightNumber + " does not exist");
 				}
 				if(!flight.getPassengers().isEmpty()){
 					
-					System.out.println("Need to send 400. Reservations exist.");
-					URI location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "You can not delete a flight that has one or more reservation").build().toUri();
-
-					return redirectTo(location);
+					throw new CustomException("400", "You can not delete a flight that has one or more reservation");
 				}
 				else{
 					flightDAO.delete(flight);
@@ -274,11 +261,8 @@ public class FlightController<E> {
 				}
 				
 		} catch (Exception e) {
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Something went wrong").build().toUri();
-			
 			e.printStackTrace();
-			return redirectTo(location);
+			throw new CustomException("500", "Something went wrong");
 		}
 		
 	}
@@ -310,5 +294,14 @@ public class FlightController<E> {
 		String prettyJsonString = gson.toJson(je);
 		
 		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
+	}
+	
+	@ExceptionHandler(value = CustomException.class)
+	public ResponseEntity<E> customeExceptionHandler(CustomException e){
+		
+		URI location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/applicationError").queryParam("code", e.getCode()).queryParam("msg", e.getMsg()).build().toUri();
+
+		return redirectTo(location);
 	}
 }

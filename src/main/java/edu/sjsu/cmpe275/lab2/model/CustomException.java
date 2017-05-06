@@ -1,13 +1,15 @@
 package edu.sjsu.cmpe275.lab2.model;
 
-public class JSONError {
+import org.springframework.stereotype.Controller;
+
+public class CustomException extends RuntimeException {
 	private String code;
 	private String msg;
 	
-	public JSONError() {
+	public CustomException() {
 	}
 	
-	public JSONError(String code, String msg) {
+	public CustomException(String code, String msg) {
 		this.code = code;
 		this.msg = msg;
 	}
