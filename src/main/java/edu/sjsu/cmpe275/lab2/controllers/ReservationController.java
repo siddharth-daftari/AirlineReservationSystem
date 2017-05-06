@@ -250,6 +250,7 @@ public class ReservationController<E> {
 			for(Flight flight : reservation.getFlights()){
 				flight.setSeatsLeft(flight.getSeatsLeft()+1);
 				flight.getPassengers().remove(reservation.getPassenger());
+				flightDAO.save(flight);
 			}
 			
 			reservationDAO.delete(reservation);
