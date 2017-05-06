@@ -128,13 +128,13 @@ public class FlightController<E> {
 		
 		Plane plane = new Plane(capacity,model,manufacturer,yearOfManufacture);
 		Flight flight = flightDAO.findOne(flightNumber); 
-		int seatsLeft = flight.getSeatsLeft();
+		int seatsLeft = 0;
 		URI location;
 		if(flight==null){
 			 flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
 		}else{
 			//set the price. It does not affect the previous reservations. 
-			
+			seatsLeft = flight.getSeatsLeft();
 			System.out.println("Flight exists. So updating");
 			
 			
@@ -218,30 +218,25 @@ public class FlightController<E> {
 			}
 		}
 		
+		flight.setPrice(price);
+		flight.setFrom(from);
+		flight.setTo(to);
+		flight.setDepartureTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime));
+		flight.setArrivalTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime));
+		flight.setDescription(description);
+		flight.getPlane().setCapacity(capacity);
+		flight.getPlane().setModel(model);
+		flight.getPlane().setManufacturer(manufacturer);
+		flight.getPlane().setYearOfManufacture(yearOfManufacture);
+		flight.setSeatsLeft(seatsLeft);
 		
+		flightDAO.save(flight);
+		location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
 		
-		//TODO: Check if the flight exists. If yes, update values. else save flight.
+		return redirectTo(location);
+		//return flight;
 		
-		{
-			flight.setPrice(price);
-			flight.setFrom(from);
-			flight.setTo(to);
-			flight.setDepartureTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime));
-			flight.setArrivalTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime));
-			flight.setDescription(description);
-			flight.getPlane().setCapacity(capacity);
-			flight.getPlane().setModel(model);
-			flight.getPlane().setManufacturer(manufacturer);
-			flight.getPlane().setYearOfManufacture(yearOfManufacture);
-			flight.setSeatsLeft(seatsLeft);
-			
-			flightDAO.save(flight);
-			location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
-			
-			return redirectTo(location);
-			//return flight;
-		}
 	}
 	
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
