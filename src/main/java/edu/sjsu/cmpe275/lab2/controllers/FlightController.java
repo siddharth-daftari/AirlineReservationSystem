@@ -7,10 +7,17 @@ import java.net.URI;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.SimpleFormatter;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletResponse;
 
 import org.dom4j.Document;
@@ -21,9 +28,12 @@ import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,15 +47,22 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
+import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
 import edu.sjsu.cmpe275.lab2.model.Flight;
+import edu.sjsu.cmpe275.lab2.model.Flight_;
+import edu.sjsu.cmpe275.lab2.model.Passenger_;
 import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
+import edu.sjsu.cmpe275.lab2.model.Reservation_;
 
 @RestController
 public class FlightController<E> {
 	
 	@Autowired
 	private FlightDAO flightDAO;
+	
+	@Autowired
+	private ReservationDAO reservationDAO;
 	
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
@@ -105,30 +122,33 @@ public class FlightController<E> {
 	}
 
 	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
+	@Transactional
 	@RequestMapping(value="/flight/{flight_number}",method = RequestMethod.POST)
 	public ResponseEntity<E> createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
 		
 		Plane plane = new Plane(capacity,model,manufacturer,yearOfManufacture);
 		Flight flight = flightDAO.findOne(flightNumber); 
+		int seatsLeft = flight.getSeatsLeft();
 		URI location;
 		if(flight==null){
 			 flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
 		}else{
 			//set the price. It does not affect the previous reservations. 
-			flight.setPrice(price);
+			
 			System.out.println("Flight exists. So updating");
+			
+			
 			//set the plane. check the capacity of the plane
 			//if capacity is increasing add the difference in the seatsLeft
 			//if reducing, check. reservations < new capacity == true.
 			
 			int originalCapacity = flight.getPlane().getCapacity();
 			int activeReservations = originalCapacity-flight.getSeatsLeft();
-			System.out.println(capacity);
-			System.out.println(originalCapacity);
-			if(capacity > originalCapacity){
-				flight.getPlane().setCapacity(capacity);
-				flight.setSeatsLeft(capacity-activeReservations);
-				System.out.println("Capcity greater than original");
+			if(capacity >= originalCapacity){
+				seatsLeft = capacity-activeReservations;
+				/*flight.getPlane().setCapacity(capacity);
+				flight.setSeatsLeft(capacity-activeReservations);*/
+				System.out.println("Capcity greater than or equal to original");
 			}
 			else{
 				
@@ -142,10 +162,59 @@ public class FlightController<E> {
 						return redirectTo(location);
 					}
 					else{
-						flight.getPlane().setCapacity(capacity);
-						flight.setSeatsLeft(capacity-activeReservations);
+						seatsLeft = capacity-activeReservations;
+						/*flight.getPlane().setCapacity(capacity);
+						flight.setSeatsLeft(capacity-activeReservations);*/
 					}
 				
+			}
+			
+			//check for overlapping time 
+			Specification spec = new Specification<Reservation>() {
+			    
+				@Override
+				public Predicate toPredicate(Root<Reservation> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
+					
+					List<Predicate> predicates = new ArrayList<>();
+					
+					Join<Reservation,Flight> joinRoot = root.join(Reservation_.flights);
+					
+					if (!"".equalsIgnoreCase(flightNumber)) {
+				    	
+				    	predicates.add(cb.equal(joinRoot.get(Flight_.number), flightNumber ));
+					}
+					cq.distinct(true);
+				    return andTogether(predicates, cb);
+				}
+				
+				private Predicate andTogether(List<Predicate> predicates, CriteriaBuilder cb) {
+					
+				    return cb.and(predicates.toArray(new Predicate[0]));
+				}
+			};
+			
+			//reservationList contains the result
+			List<Reservation> reservationList = reservationDAO.findAll(spec);
+			
+			for(Reservation reservation : reservationList){
+				List<Flight> flightList = reservation.getFlights();
+				Date newArrivalTime = (Date) (new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime));
+				Date newDepartureTime = (Date) (new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime));
+				
+				for(Flight flightTemp : flightList){
+					
+					if(!flightNumber.equalsIgnoreCase(flightTemp.getNumber())){
+						if(newArrivalTime.before(flightTemp.getDepartureTime()) || newDepartureTime.after(flightTemp.getArrivalTime())){
+							
+						}else{
+						
+							location = ServletUriComponentsBuilder
+						            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Cannot update the flight. Updated time interval is in conflict with existing reservations.").build().toUri();
+
+							return redirectTo(location);
+						}
+					}
+				}
 			}
 		}
 		
@@ -153,18 +222,26 @@ public class FlightController<E> {
 		
 		//TODO: Check if the flight exists. If yes, update values. else save flight.
 		
-		try{
+		{
+			flight.setPrice(price);
+			flight.setFrom(from);
+			flight.setTo(to);
+			flight.setDepartureTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime));
+			flight.setArrivalTime(new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime));
+			flight.setDescription(description);
+			flight.getPlane().setCapacity(capacity);
+			flight.getPlane().setModel(model);
+			flight.getPlane().setManufacturer(manufacturer);
+			flight.getPlane().setYearOfManufacture(yearOfManufacture);
+			flight.setSeatsLeft(seatsLeft);
+			
 			flightDAO.save(flight);
 			location = ServletUriComponentsBuilder
 		            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
-			System.out.println(location);
+			
 			return redirectTo(location);
 			//return flight;
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 	
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
