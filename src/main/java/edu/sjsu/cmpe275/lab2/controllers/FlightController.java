@@ -4,14 +4,11 @@ package edu.sjsu.cmpe275.lab2.controllers;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.logging.SimpleFormatter;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -32,7 +29,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,11 +48,15 @@ import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
 import edu.sjsu.cmpe275.lab2.model.CustomException;
 import edu.sjsu.cmpe275.lab2.model.Flight;
 import edu.sjsu.cmpe275.lab2.model.Flight_;
-import edu.sjsu.cmpe275.lab2.model.Passenger_;
 import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
 import edu.sjsu.cmpe275.lab2.model.Reservation_;
 
+/**
+ * @author siddharth and parvez
+ *
+ * @param <E>
+ */
 @RestController
 public class FlightController<E> {
 	
@@ -66,6 +66,10 @@ public class FlightController<E> {
 	@Autowired
 	private ReservationDAO reservationDAO;
 	
+	/**
+	 * @param location
+	 * @return
+	 */
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLocation(location);
@@ -74,6 +78,13 @@ public class FlightController<E> {
 	
 	
 	//https://hostname/flight/flightNumber
+	/**
+	 * @param flightNumber
+	 * @param xmlFlag
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
 	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber,@RequestParam(value="xml",defaultValue="false",required=false) boolean xmlFlag,HttpServletResponse response) throws Exception {
@@ -122,6 +133,21 @@ public class FlightController<E> {
 	}
 
 	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
+	/**
+	 * @param flightNumber
+	 * @param price
+	 * @param from
+	 * @param to
+	 * @param departureTime
+	 * @param arrivalTime
+	 * @param description
+	 * @param capacity
+	 * @param model
+	 * @param manufacturer
+	 * @param yearOfManufacture
+	 * @return
+	 * @throws ParseException
+	 */
 	@Transactional
 	@RequestMapping(value="/flight/{flight_number}",method = RequestMethod.POST)
 	public ResponseEntity<E> createOrUpdateFlight(@PathVariable(value = "flight_number") String flightNumber, @RequestParam(value="price") int price, @RequestParam(value="from") String from, @RequestParam(value="to") String to, @RequestParam(value="departureTime") String departureTime, @RequestParam(value="arrivalTime") String arrivalTime,@RequestParam(value="description") String description,@RequestParam(value="capacity") int capacity,@RequestParam(value="model") String model,@RequestParam(value="manufacturer") String manufacturer,@RequestParam(value="yearOfManufacture") int yearOfManufacture) throws ParseException{
@@ -233,6 +259,10 @@ public class FlightController<E> {
 		
 	}
 	
+	/**
+	 * @param flightNumber
+	 * @return
+	 */
 	@Transactional
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
@@ -267,6 +297,12 @@ public class FlightController<E> {
 		
 	}
 	
+	/**
+	 * @param returnJsonVar
+	 * @return
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
 	public ResponseEntity<E> convertToXml(JSONObject returnJsonVar) throws DocumentException, IOException{
 		
 		String xml = XML.toString(returnJsonVar);
@@ -286,6 +322,10 @@ public class FlightController<E> {
         return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
 	}
 	
+	/**
+	 * @param returnJsonVar
+	 * @return
+	 */
 	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -296,6 +336,10 @@ public class FlightController<E> {
 		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
 	}
 	
+	/**
+	 * @param e
+	 * @return
+	 */
 	@ExceptionHandler(value = CustomException.class)
 	public ResponseEntity<E> customeExceptionHandler(CustomException e){
 		

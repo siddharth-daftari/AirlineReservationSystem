@@ -1,9 +1,11 @@
 package edu.sjsu.cmpe275.lab2.controllers;
-import java.util.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -25,13 +27,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -52,22 +52,37 @@ import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
 import edu.sjsu.cmpe275.lab2.model.Reservation_;
 
+/**
+ * @author siddharth and parvez
+ *
+ * @param <E>
+ */
 @RestController
 public class ReservationController<E> {
 	@Autowired
 	private ReservationDAO reservationDAO;
 	@Autowired
 	private FlightDAO flightDAO;
-	//Reservation reservation = null;
 	@Autowired
 	private PassengerDAO passengerDAO;
 	
+	/**
+	 * @param location
+	 * @return
+	 */
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLocation(location);
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	
+	/**
+	 * @param passengerId
+	 * @param flightList
+	 * @return
+	 * @throws Exception
+	 * @throws IOException
+	 */
 	@Transactional
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
 	public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
@@ -165,6 +180,13 @@ public class ReservationController<E> {
 	}
 	
 	//https://hostname/reservation/number
+	/**
+	 * @param orderNumber
+	 * @param isXmlReq
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/reservation/{number}", method=RequestMethod.GET)
 	public ResponseEntity<E> getReservationJSON(@PathVariable("number") String orderNumber, @RequestParam(value="xml", defaultValue="false") boolean isXmlReq, HttpServletResponse response) throws Exception{
@@ -252,6 +274,10 @@ public class ReservationController<E> {
 		}
 	}
 	
+	/**
+	 * @param orderNumber
+	 * @return
+	 */
 	@Transactional
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> cancelReservation(@PathVariable(value = "order_number")String orderNumber){
@@ -283,6 +309,12 @@ public class ReservationController<E> {
 	}
 	
 	//https://hostname/reservation/number?flightsAdded=AA,BB,CC&flightsRemoved=XX,YY
+	/**
+	 * @param orderNumber
+	 * @param flightsAdded
+	 * @param flightsRemoved
+	 * @return
+	 */
 	@Transactional
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.POST)
 	public ResponseEntity<E> updateReservation(@PathVariable(value="order_number")String orderNumber,@RequestParam(value="flightsAdded", required=false) String[] flightsAdded,@RequestParam(value="flightsRemoved",required=false) String[] flightsRemoved) {
@@ -376,6 +408,15 @@ public class ReservationController<E> {
 		
 	}
 	
+	/**
+	 * @param passengerId
+	 * @param from
+	 * @param to
+	 * @param flightNumber
+	 * @return
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
 	@Transactional
 	@RequestMapping(value="/reservation",method=RequestMethod.GET)
 	public ResponseEntity<E> searchReservation(@RequestParam(value="passengerId",defaultValue="") String passengerId, @RequestParam(value="from",defaultValue="") String from, @RequestParam(value="to",defaultValue="") String to,@RequestParam(value="flightNumber",defaultValue="") String flightNumber) throws DocumentException, IOException{
@@ -483,6 +524,10 @@ public class ReservationController<E> {
 		return convertToXml(returnJsonVar);
 	}
 	
+	/**
+	 * @param returnJsonVar
+	 * @return
+	 */
 	public ResponseEntity convertToJSON(JSONObject returnJsonVar){
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
@@ -492,6 +537,12 @@ public class ReservationController<E> {
 		return new ResponseEntity(prettyJsonString,HttpStatus.OK);
 	}
 	
+	/**
+	 * @param returnJsonVar
+	 * @return
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
 	public ResponseEntity<E> convertToXml(JSONObject returnJsonVar) throws DocumentException, IOException{
 		
 		String xml = XML.toString(returnJsonVar);
@@ -512,6 +563,10 @@ public class ReservationController<E> {
 	}
 	
 	
+	/**
+	 * @param reservation
+	 * @return
+	 */
 	public JSONObject generateReservationJSONObject(Reservation reservation){
 		JSONObject reservationObj = new JSONObject();
 		
@@ -540,6 +595,10 @@ public class ReservationController<E> {
 		return returnJsonVar;
 	}
 	
+	/**
+	 * @param e
+	 * @return
+	 */
 	@ExceptionHandler(value = CustomException.class)
 	public ResponseEntity<E> customeExceptionHandler(CustomException e){
 		

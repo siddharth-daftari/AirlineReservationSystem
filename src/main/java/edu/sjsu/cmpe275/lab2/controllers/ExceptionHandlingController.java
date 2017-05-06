@@ -2,7 +2,6 @@ package edu.sjsu.cmpe275.lab2.controllers;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.gson.Gson;
@@ -27,9 +25,21 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
+/**
+ * @author siddharth and parvez
+ *
+ * @param <E>
+ */
 @RestController
 public class ExceptionHandlingController<E> {
 	
+	/**
+	 * @param code
+	 * @param msg
+	 * @param response
+	 * @return
+	 * @throws JSONException
+	 */
 	@RequestMapping("/applicationError")
 	@ResponseBody
 	public  ResponseEntity<E> returnError(@RequestParam(value="code", defaultValue="400") String code,@RequestParam(value="msg", defaultValue="msg") String msg, HttpServletResponse response) throws JSONException{
@@ -56,6 +66,15 @@ public class ExceptionHandlingController<E> {
 		return new ResponseEntity(prettyJsonString,HttpStatus.valueOf(Integer.parseInt(code)));
 	}
 	
+	/**
+	 * @param code
+	 * @param msg
+	 * @param response
+	 * @return
+	 * @throws JSONException
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
 	@RequestMapping("/applicationErrorInXML")
 	@ResponseBody
 	public  ResponseEntity<E> returnErrorInXML(@RequestParam(value="code", defaultValue="400") String code,@RequestParam(value="msg", defaultValue="msg") String msg, HttpServletResponse response) throws JSONException, DocumentException, IOException{

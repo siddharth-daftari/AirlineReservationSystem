@@ -1,6 +1,8 @@
 package edu.sjsu.cmpe275.lab2.model;
 
-import javax.persistence.metamodel.*;
+import javax.persistence.metamodel.ListAttribute;
+import javax.persistence.metamodel.SingularAttribute;
+import javax.persistence.metamodel.StaticMetamodel;
 
 @StaticMetamodel(Reservation.class)
 public class Reservation_ {

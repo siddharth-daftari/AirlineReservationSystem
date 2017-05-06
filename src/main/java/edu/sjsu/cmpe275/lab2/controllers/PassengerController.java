@@ -4,7 +4,6 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,6 +44,11 @@ import edu.sjsu.cmpe275.lab2.model.Plane;
 import edu.sjsu.cmpe275.lab2.model.Reservation;
 
 
+/**
+ * @author siddharth and parvez
+ *
+ * @param <E>
+ */
 @RestController
 public class PassengerController<E> {
 	
@@ -64,6 +67,18 @@ public class PassengerController<E> {
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	
+	/**
+	 * @param firstname
+	 * @param lastname
+	 * @param age
+	 * @param gender
+	 * @param phone
+	 * @param model
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/passenger", method=RequestMethod.POST)
     public ResponseEntity<E> createPassenger(@RequestParam(value="firstname", defaultValue="firstname") String firstname, @RequestParam(value="lastname", defaultValue="lastname") String lastname, @RequestParam(value="age", defaultValue="0") int age, @RequestParam(value="gender", defaultValue="gender") String gender, @RequestParam(value="phone", defaultValue="phone") String phone, ModelMap model, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -89,6 +104,13 @@ public class PassengerController<E> {
 		return redirectTo(location);
 	}
 	
+	/**
+	 * @param id
+	 * @param isXmlReq
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/passenger/{id}", method=RequestMethod.GET)
     public ResponseEntity<?> getPassengerWithJsonReq(@PathVariable("id") String id, @RequestParam(value="xml", defaultValue="false") boolean isXmlReq, HttpServletResponse response) throws Exception {
@@ -191,6 +213,18 @@ public class PassengerController<E> {
 		}
 	}
 
+	/**
+	 * @param id
+	 * @param firstname
+	 * @param lastname
+	 * @param age
+	 * @param gender
+	 * @param phone
+	 * @param model
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/passenger/{id}", method=RequestMethod.PUT)
     public ResponseEntity<E> updatePassenger(@PathVariable("id") String id, @RequestParam(value="firstname", defaultValue="firstname") String firstname, @RequestParam(value="lastname", defaultValue="lastname") String lastname, @RequestParam(value="age", defaultValue="0") int age, @RequestParam(value="gender", defaultValue="gender") String gender, @RequestParam(value="phone", defaultValue="phone") String phone, ModelMap model, HttpServletResponse response) throws Exception {
@@ -226,6 +260,11 @@ public class PassengerController<E> {
 		return redirectTo(location);
 	}
 	
+	/**
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
 	@Transactional
 	@RequestMapping(value="/passenger/{id}", method=RequestMethod.DELETE)
     public ResponseEntity<E> deletePassenger(@PathVariable("id") String id) throws Exception {
@@ -265,6 +304,10 @@ public class PassengerController<E> {
 		return redirectTo(location);
 	}
 	
+	/**
+	 * @param e
+	 * @return
+	 */
 	@ExceptionHandler(value = CustomException.class)
 	public ResponseEntity<E> customeExceptionHandler(CustomException e){
 		

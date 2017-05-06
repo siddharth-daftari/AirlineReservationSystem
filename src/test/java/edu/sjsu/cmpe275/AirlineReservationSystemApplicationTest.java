@@ -7,14 +7,19 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import edu.sjsu.cmpe275.lab2.Application;
 
+/**
+ * @author siddharth and parvez
+ *
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=Application.class)
-public class AirlineReservationSystemApplicationTests {
+public class AirlineReservationSystemApplicationTest {
 
+	/**
+	 * 
+	 */
 	@Test
 	public void contextLoads() {
 	}
 	
-	
-
 }
