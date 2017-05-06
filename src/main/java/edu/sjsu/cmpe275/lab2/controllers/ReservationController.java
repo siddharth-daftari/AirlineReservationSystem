@@ -65,8 +65,8 @@ public class ReservationController<E> {
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
 	
-	/*@RequestMapping(value="/reservation",method=RequestMethod.POST)
-    public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
+	@RequestMapping(value="/reservation",method=RequestMethod.POST)
+	public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
 		Reservation reservation = null;
 		URI location;
 		try {
@@ -75,151 +75,97 @@ public class ReservationController<E> {
 			
 			List<Flight> flightLists = new ArrayList<Flight>();
 			
-			int price = 0;
+			//fetch all the past flights of this passenger
+			Specification spec = new Specification<Flight>() {
+			    
+				@Override
+				public Predicate toPredicate(Root<Flight> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
+					
+					List<Predicate> predicates = new ArrayList<>();
+					
+					Join<Flight,Passenger> joinRoot = root.join(Flight_.passengers);
+					
+				    predicates.add(cb.equal(joinRoot.get(Passenger_.id), passengerId ));
+					
+				    cq.distinct(true);
+				    return andTogether(predicates, cb);
+				}
+				
+				private Predicate andTogether(List<Predicate> predicates, CriteriaBuilder cb) {
+					
+				    return cb.and(predicates.toArray(new Predicate[0]));
+				}
+			};
 			
-			//check for the time conflict
-			int flag=0;
-			for(int i=0; i<flightList.length;i++){
-				Flight fl1 = new Flight();
-				fl1 = flightDAO.findOne(flightList[i]);
-				Date fl1ArrivalTime = fl1.getArrivalTime();
-				Date fl1DeptTime = fl1.getDepartureTime();
-				for(int j=i+1;j<flightList.length;j++){
-					Flight fl2 = new Flight();
-					fl2 = flightDAO.findOne(flightList[j]);
-					Date fl2ArrivalTime = fl2.getArrivalTime();
-					Date fl2DeptTime = fl2.getDepartureTime();
-					
-					if(((fl1DeptTime.compareTo(fl2ArrivalTime) >= 0) &&(fl1ArrivalTime.compareTo(fl2ArrivalTime)<=0) ) ||((fl1ArrivalTime.compareTo(fl2DeptTime)<=0) && (fl2DeptTime.compareTo(fl1DeptTime)<=0)) ){
-						flag = 1;
-						break;
-					}
-				}
-				if(flag==1){
-					System.out.println(" Flight can't be added ");
-					
-					location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap in the flights").build().toUri();
-					return redirectTo(location);
-				}
-			}*/
-	
-		@RequestMapping(value="/reservation",method=RequestMethod.POST)
-		public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
-			Reservation reservation = null;
-			URI location;
-			try {
-				Passenger passenger = new Passenger();
-				passenger = passengerDAO.findOne(passengerId);
+			List<Flight> pastFlightLists = flightDAO.findAll(spec);
+			
+			if(pastFlightLists != null && !pastFlightLists.isEmpty()){
 				
-				List<Flight> flightLists = new ArrayList<Flight>();
-				
-				//fetch all the past flights of this passenger
-				Specification spec = new Specification<Flight>() {
-				    
-					@Override
-					public Predicate toPredicate(Root<Flight> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
-						
-						List<Predicate> predicates = new ArrayList<>();
-						
-						Join<Flight,Passenger> joinRoot = root.join(Flight_.passengers);
-						
-					    predicates.add(cb.equal(joinRoot.get(Passenger_.id), passengerId ));
-						
-					    cq.distinct(true);
-					    return andTogether(predicates, cb);
-					}
-					
-					private Predicate andTogether(List<Predicate> predicates, CriteriaBuilder cb) {
-						
-					    return cb.and(predicates.toArray(new Predicate[0]));
-					}
-				};
-				
-				List<Flight> pastFlightLists = flightDAO.findAll(spec);
-				
-				if(pastFlightLists != null && !pastFlightLists.isEmpty()){
-					
-				}else{
-					pastFlightLists = new ArrayList<Flight>();
-				}
-				
-				//adding current flights (provided in the URL) to this list
-				for(String flightNumber : flightList){
-					Flight flightTemp = flightDAO.findByNumber(flightNumber);
-					if(flightTemp!=null)
-						pastFlightLists.add(flightTemp);
-				}
-				//
-				int price = 0;
-				
-				System.out.println("List of past flights:");
-				for (Flight flight : pastFlightLists){
-					System.out.println(flight.getNumber());
-				}
-				
-				int pastFlightListsSize = pastFlightLists.size();
-				//for each flight checking overlap and seats left
-				for (int i=0; i<pastFlightListsSize; i++) {
-					Flight flight = pastFlightLists.get(0); 
-					//check for time overlap
-					pastFlightLists.remove(flight);
-					Date newArrivalTime = flight.getArrivalTime();
-					Date newDepartureTime = flight.getDepartureTime();
-					
-					System.out.println("Flight outer - " + flight.getNumber());
-					
-					for(Flight flightTemp : pastFlightLists){
-						System.out.println("Flight inner - " + flightTemp.getNumber());
-						
-						if(!(flight.equals(flightTemp)) && (newArrivalTime.before(flightTemp.getDepartureTime()) || newDepartureTime.after(flightTemp.getArrivalTime()))){
-							System.out.println("andar aivu");
-							
-								System.out.println("No conflict");
-						}else{
-							location = ServletUriComponentsBuilder
-						            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Sorry, there is a time overlap in the flights.").build().toUri();
-
-							return redirectTo(location);
-						}
-						
-					}
-					System.out.println("after time overlap satisfied");
-					//check for seats left
-					if(flight.getSeatsLeft()==0){
-						location = ServletUriComponentsBuilder
-					            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+ flight.getNumber() +" is completely booked!").build().toUri();
-						return redirectTo(location);
-					}
-					System.out.println("after criterias satisfied");
-					//both criteria satisfied
-					flight.getPassengers().add(passenger);
-					flight.setSeatsLeft(flight.getSeatsLeft()-1);
-					flightLists.add(flight);
-					price+=flightDAO.findOne(flight.getNumber()).getPrice();
-				}	
-				System.out.println("List of flights after processing:");
-				for (Flight flight : pastFlightLists){
-					System.out.println(flight.getNumber());
-				}
-				reservation = new Reservation(passenger, price, flightLists);
-				
-				reservation = reservationDAO.save(reservation);
-				//System.out.println("Order No :" + reservation.getOrderNumber());
-				reservation = reservationDAO.findOne(reservation.getOrderNumber());
-							
-			}catch(Exception e){
-				e.printStackTrace();
-				location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Sorry, something went wrong.").build().toUri();
-				return redirectTo(location);
+			}else{
+				pastFlightLists = new ArrayList<Flight>();
 			}
 			
+			//adding current flights (provided in the URL) to this list
+			for(String flightNumber : flightList){
+				Flight flightTemp = flightDAO.findByNumber(flightNumber);
+				if(flightTemp!=null)
+					pastFlightLists.add(flightTemp);
+			}
+			//
+			int price = 0;
+			
+			int pastFlightListsSize = pastFlightLists.size();
+			//for each flight checking overlap and seats left
+			for (int i=0; i<pastFlightListsSize; i++) {
+				Flight flight = pastFlightLists.get(0); 
+				//check for time overlap
+				pastFlightLists.remove(flight);
+				Date newArrivalTime = flight.getArrivalTime();
+				Date newDepartureTime = flight.getDepartureTime();
+				
+				for(Flight flightTemp : pastFlightLists){
+					
+					if(!(flight.equals(flightTemp)) && (newArrivalTime.before(flightTemp.getDepartureTime()) || newDepartureTime.after(flightTemp.getArrivalTime()))){
+					
+					}else{
+						location = ServletUriComponentsBuilder
+					            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "400").queryParam("msg", "Sorry, there is a time overlap in the flights.").build().toUri();
+
+						return redirectTo(location);
+					}
+					
+				}
+				//check for seats left
+				if(flight.getSeatsLeft()==0){
+					location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+ flight.getNumber() +" is completely booked!").build().toUri();
+					return redirectTo(location);
+				}
+				
+				//both criteria satisfied
+				flight.getPassengers().add(passenger);
+				flight.setSeatsLeft(flight.getSeatsLeft()-1);
+				flightLists.add(flight);
+				price+=flightDAO.findOne(flight.getNumber()).getPrice();
+			}	
+			
+			reservation = new Reservation(passenger, price, flightLists);
+			
+			reservation = reservationDAO.save(reservation);
+			reservation = reservationDAO.findOne(reservation.getOrderNumber());
+						
+		}catch(Exception e){
+			e.printStackTrace();
 			location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).queryParam("xml", true).build().toUri();
-	
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Sorry, something went wrong.").build().toUri();
 			return redirectTo(location);
 		}
+		
+		location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).queryParam("xml", true).build().toUri();
+
+		return redirectTo(location);
+	}
 	
 	//https://hostname/reservation/number
 	@RequestMapping(value="/reservation/{number}", method=RequestMethod.GET)
