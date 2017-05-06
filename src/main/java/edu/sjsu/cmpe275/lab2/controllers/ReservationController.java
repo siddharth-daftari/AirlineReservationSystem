@@ -71,16 +71,14 @@ public class ReservationController<E> {
 	@RequestMapping(value="/reservation",method=RequestMethod.POST)
     public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
 		Reservation reservation = null;
+		URI location;
 		try {
 			Passenger passenger = new Passenger();
 			passenger = passengerDAO.findOne(passengerId);
-			URI location;
+			
 			List<Flight> flightLists = new ArrayList<Flight>();
 			
-			
 			int price = 0;
-			
-				
 			
 			//check for the time conflict
 			int flag=0;
@@ -109,8 +107,6 @@ public class ReservationController<E> {
 				}
 			}
 			
-			
-			
 			/*
 			 * if there is no time conflict create the reservation.
 			*/
@@ -128,7 +124,6 @@ public class ReservationController<E> {
 				price+=flightDAO.findOne(flightNumber).getPrice();
 			}	
 			
-			
 			reservation = new Reservation(passenger, price, flightLists);
 			
 			reservation = reservationDAO.save(reservation);
@@ -137,15 +132,21 @@ public class ReservationController<E> {
 						
 		}catch(Exception e){
 			e.printStackTrace();
+			location = ServletUriComponentsBuilder
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "500").queryParam("msg", "Sorry, something went wrong.").build().toUri();
+			return redirectTo(location);
 		}
 		
-		return convertToXml(generateReservationJSONObject(reservation));
+		location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).queryParam("xml", true).build().toUri();
+
+		return redirectTo(location);
 		
 	}
 	
 	//https://hostname/reservation/number
 	@RequestMapping(value="/reservation/{number}", method=RequestMethod.GET)
-	public ResponseEntity<E> getReservationJSON(@PathVariable("number") String orderNumber,HttpServletResponse response) throws Exception{
+	public ResponseEntity<E> getReservationJSON(@PathVariable("number") String orderNumber, @RequestParam(value="xml", defaultValue="false") boolean isXmlReq, HttpServletResponse response) throws Exception{
 		
 		Reservation reservation = reservationDAO.findOne(orderNumber);
 		
@@ -206,7 +207,30 @@ public class ReservationController<E> {
 			reservationTempJSON.put("flights",flightTemp);
 			returnJsonVar.put("reservation",reservationTempJSON );
 			
-			return convertToJSON(returnJsonVar);
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			JsonParser jp = new JsonParser();
+			JsonElement je = jp.parse(returnJsonVar.toString());
+			String prettyJsonString = gson.toJson(je);
+			
+			if(!isXmlReq){
+				return new ResponseEntity(prettyJsonString,HttpStatus.OK);
+			}else{
+				String xml = XML.toString(returnJsonVar);
+				
+				//converting XML to pretty print format
+				Document document = DocumentHelper.parseText(xml);  
+	            StringWriter stringWriter = new StringWriter();  
+	            OutputFormat outputFormat = OutputFormat.createPrettyPrint();  
+	            outputFormat.setIndent(true);
+	            outputFormat.setIndentSize(3); 
+	            outputFormat.setSuppressDeclaration(true);
+	            outputFormat.setNewLineAfterDeclaration(false);
+	            XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
+	            xmlWriter.write(document);  
+	            
+	            //return stringWriter.toString();
+	            return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
+			}
 		}
 	}
 	
@@ -219,7 +243,7 @@ public class ReservationController<E> {
 		URI location = null;
 		if(reservation==null){
 			 location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested reservation with order number " + orderNumber + " does not exist").build().toUri();
+		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Reservation with number " + orderNumber + " does not exist ").build().toUri();
 		
 		}
 		else{
@@ -227,7 +251,6 @@ public class ReservationController<E> {
 				flight.setSeatsLeft(flight.getSeatsLeft()+1);
 				flight.getPassengers().remove(reservation.getPassenger());
 			}
-			
 			
 			reservationDAO.delete(reservation);
 			//passengerDAO.delete(reservation.getPassenger());

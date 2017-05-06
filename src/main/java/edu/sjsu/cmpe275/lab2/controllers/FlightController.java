@@ -52,99 +52,54 @@ public class FlightController<E> {
 		headers.setLocation(location);
 		return (ResponseEntity<E>) new ResponseEntity<Void>(headers, HttpStatus.MOVED_PERMANENTLY);
 	}
-	//https://hostname/flight/flightNumber?xml=true
-	@RequestMapping(value="/flightXML/{flight_number}", method=RequestMethod.GET)
-    public ResponseEntity<E> getFlightWithXmlReq(@PathVariable("flight_number") String flightNumber,HttpServletResponse response) throws Exception {
-		
-		Flight flight = flightDAO.findOne(flightNumber);
-		
-		if(flight==null){
-			URI location = ServletUriComponentsBuilder
-		            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
-
-			return redirectTo(location);
-		}
-		else{
-			JSONObject flightObj = new JSONObject();
-			flightObj.put("flightNumber", flight.getNumber());
-			flightObj.put("price", flight.getPrice());
-			flightObj.put("from", flight.getFrom());
-			flightObj.put("to", flight.getTo());
-			flightObj.put("departureTime", flight.getDepartureTime());
-			flightObj.put("arrivalTime", flight.getArrivalTime());
-			flightObj.put("description", flight.getDescription());
-			flightObj.put("seatsLeft", flight.getSeatsLeft());
-			
-			JSONObject planeObj = new JSONObject();
-			planeObj.put("capacity",flight.getPlane().getCapacity());
-			planeObj.put("model",flight.getPlane().getModel());
-			planeObj.put("manufacturer",flight.getPlane().getManufacturer());
-			planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
-			flightObj.put("plane", planeObj);
-			
-			JSONObject listOfPassengers = new JSONObject();
-			listOfPassengers.put("passenger", flight.getPassengers());
-			System.out.println(flight.getPassengers().size());
-		
-			flightObj.put("passengers", listOfPassengers);
-			JSONObject returnJsonVar = new JSONObject();
-			returnJsonVar.put("flight", flightObj);
-				
-			
-			return convertToXml(returnJsonVar);
-		}
-		
-
-	}
+	
 	
 	//https://hostname/flight/flightNumber
 	@RequestMapping(value="/flight/{flight_number}", method=RequestMethod.GET)
 	public ResponseEntity<E> getFlightWithJSONReq(@PathVariable("flight_number") String flightNumber,@RequestParam(value="xml",defaultValue="false",required=false) boolean xmlFlag,HttpServletResponse response) throws Exception {
 			
 			Flight flight = flightDAO.findOne(flightNumber);
-			if(!xmlFlag){
-				if(flight==null){
-					URI location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
-
-					return redirectTo(location);
-				}
-				else{
-					JSONObject flightObj = new JSONObject();
-					flightObj.put("flightNumber", flight.getNumber());
-					flightObj.put("price", flight.getPrice());
-					flightObj.put("from", flight.getFrom());
-					flightObj.put("to", flight.getTo());
-					flightObj.put("departureTime", flight.getDepartureTime());
-					flightObj.put("arrivalTime", flight.getArrivalTime());
-					flightObj.put("description", flight.getDescription());
-					flightObj.put("seatsLeft", flight.getSeatsLeft());
-					
-					JSONObject planeObj = new JSONObject();
-					planeObj.put("capacity",flight.getPlane().getCapacity());
-					planeObj.put("model",flight.getPlane().getModel());
-					planeObj.put("manufacturer",flight.getPlane().getManufacturer());
-					planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
-					flightObj.put("plane", planeObj);
-					
-					JSONObject listOfPassengers = new JSONObject();
-					listOfPassengers.put("passenger", flight.getPassengers());
-					System.out.println(flight.getPassengers().size());
-				
-					flightObj.put("passengers", listOfPassengers);
-					JSONObject returnJsonVar = new JSONObject();
-					returnJsonVar.put("flight", flightObj);
-						
-					return convertToJSON(returnJsonVar);
-					
-				}
-
-			}
-			else{
+			JSONObject returnJsonVar = new JSONObject();
+			
+			if(flight==null){
 				URI location = ServletUriComponentsBuilder
-			            .fromCurrentServletMapping().path("/flightXML/"+flightNumber).build().toUri();
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, the requested flight with flight number " + flightNumber + " does not exist").build().toUri();
 
 				return redirectTo(location);
+			}
+			else{
+				JSONObject flightObj = new JSONObject();
+				flightObj.put("flightNumber", flight.getNumber());
+				flightObj.put("price", flight.getPrice());
+				flightObj.put("from", flight.getFrom());
+				flightObj.put("to", flight.getTo());
+				flightObj.put("departureTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(flight.getDepartureTime()));
+				flightObj.put("arrivalTime", new SimpleDateFormat("yyyy-MM-dd-hh").format(flight.getArrivalTime()));
+				flightObj.put("description", flight.getDescription());
+				flightObj.put("seatsLeft", Integer.toString(flight.getSeatsLeft()));
+				
+				JSONObject planeObj = new JSONObject();
+				planeObj.put("capacity",Integer.toString(flight.getPlane().getCapacity()));
+				planeObj.put("model",flight.getPlane().getModel());
+				planeObj.put("manufacturer",flight.getPlane().getManufacturer());
+				planeObj.put("yearOfManufacture",flight.getPlane().getYearOfManufacture());
+				flightObj.put("plane", planeObj);
+				
+				JSONObject listOfPassengers = new JSONObject();
+				listOfPassengers.put("passenger", flight.getPassengers());
+				System.out.println(flight.getPassengers().size());
+			
+				flightObj.put("passengers", listOfPassengers);
+				
+				returnJsonVar.put("flight", flightObj);
+				
+			}
+			if(!xmlFlag){
+				return convertToJSON(returnJsonVar);
+			}
+	
+			else{
+				return convertToXml(returnJsonVar);
 			}		
 
 	}
