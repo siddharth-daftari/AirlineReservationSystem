@@ -325,7 +325,9 @@ public class ReservationController<E> {
 		if(flightsRemoved!=null){
 			//TODO: check for empty list
 			if(flightsRemoved.length==0){
-				throw new CustomException("404", "Sorry, flightsRemoved list cannot be empty");
+				location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsRemoved list cannot be empty").build().toUri();
+				return redirectTo(location);
 			}
 			//System.out.println(flightsRemoved[0]);
 			for (String flightNumber : flightsRemoved) {
@@ -338,30 +340,30 @@ public class ReservationController<E> {
 				removedflight.setSeatsLeft(removedflight.getSeatsLeft()+1);
 				//remove the passenger
 				removedflight.getPassengers().remove(reservation.getPassenger());
-				flightDAO.save(removedflight);
 				//remove the flight from the reservation
 				reservation.getFlights().remove(removedflight);
 			}	
 			reservation.setPrice(reservationPrice);
-			reservationDAO.save(reservation);
 			
 		}
 		
-			
+		reservation = reservationDAO.save(reservation);
 		if(flightsAdded!=null){
 			if(flightsAdded.length==0){
-				throw new CustomException("404", "Sorry, flightsAdded list cannot be empty.");
+				location = ServletUriComponentsBuilder
+			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsAdded list cannot be empty.").build().toUri();
+				return redirectTo(location);
 			}
 			System.out.println("Flight added are there");
-			reservation = reservationDAO.findOne(orderNumber);
-			
 			for (String flightNumber : flightsAdded) {
-				
 				System.out.println("Flight "+flightNumber);
 				Flight addedflight = new Flight();
 				addedflight = flightDAO.findOne(flightNumber);
 				//check if plane capacity exceeds or not
 				if(addedflight.getSeatsLeft()==0){
+					/*location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+flightNumber+" is completely booked!").build().toUri();
+					*///return redirectTo(location);
 					throw new CustomException("404", "Sorry, flight "+flightNumber+" is completely booked!");
 				}
 				
@@ -375,15 +377,6 @@ public class ReservationController<E> {
 					Date bookedArrivalTime = bookedFlights.getArrivalTime();
 					Date bookedDepartureTime = bookedFlights.getDepartureTime();
 					
-					/*if(arrivalTime.before(bookedDepartureTime) || departureTime.after(bookedArrivalTime)){
-						
-					}else{
-					
-						flag = 1;
-						conflictedFlightNumber =bookedFlights.getNumber();
-						break;
-					}*/
-					
 					if(((bookedDepartureTime.compareTo(arrivalTime) >= 0) &&(bookedArrivalTime.compareTo(arrivalTime)<=0) ) ||((bookedArrivalTime.compareTo(departureTime)<=0) && (departureTime.compareTo(bookedDepartureTime)<=0)) ){
 						flag = 1;
 						conflictedFlightNumber =bookedFlights.getNumber();
@@ -395,8 +388,10 @@ public class ReservationController<E> {
 					//Time overlap. Send 404
 					System.out.println(" Flight can't be added ");
 					
+					/*location = ServletUriComponentsBuilder
+				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber).build().toUri();
+					return redirectTo(location);*/
 					throw new CustomException("404", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber);
-					
 				} else{
 					System.out.println("Adding passenger to flight");
 					//add the passenger to the flight
@@ -415,14 +410,13 @@ public class ReservationController<E> {
 			reservation.setPrice(reservationPrice);
 		}
 		reservationDAO.save(reservation);
-		location = ServletUriComponentsBuilder
-	            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).build().toUri();
+        location = ServletUriComponentsBuilder
+        		.fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).build().toUri();
 
-		return redirectTo(location);
+        return redirectTo(location);
 		
 		
-	}
-	
+	}	
 	/**
 	 * @param passengerId
 	 * @param from
