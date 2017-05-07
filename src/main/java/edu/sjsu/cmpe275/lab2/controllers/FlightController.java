@@ -67,6 +67,7 @@ public class FlightController<E> {
 	private ReservationDAO reservationDAO;
 	
 	/**
+	 * Description: redirecting to the given location
 	 * @param location
 	 * @return
 	 */
@@ -77,8 +78,8 @@ public class FlightController<E> {
 	}
 	
 	
-	//https://hostname/flight/flightNumber
 	/**
+	 * Description: method for fetching details of a given flight from the database
 	 * @param flightNumber
 	 * @param xmlFlag
 	 * @param response
@@ -115,7 +116,6 @@ public class FlightController<E> {
 				
 				JSONObject listOfPassengers = new JSONObject();
 				listOfPassengers.put("passenger", flight.getPassengers());
-				System.out.println(flight.getPassengers().size());
 			
 				flightObj.put("passengers", listOfPassengers);
 				
@@ -132,8 +132,8 @@ public class FlightController<E> {
 
 	}
 
-	//https://hostname/flight/flightNumber?price=120&from=AA&to=BB&departureTime=CC&arrivalTime=DD&description=EE&capacity=GG&model=HH&manufacturer=II&yearOfManufacture=1997
 	/**
+	 * Description: method for creating or updating the flight details
 	 * @param flightNumber
 	 * @param price
 	 * @param from
@@ -160,10 +160,8 @@ public class FlightController<E> {
 			
 			 flight = new Flight(flightNumber, price, from, to, (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(departureTime), (Date) new SimpleDateFormat("yyyy-MM-dd-hh").parse(arrivalTime), capacity, description, plane, null);
 		}else{
-			//set the price. It does not affect the previous reservations. 
+			 
 			int seatsLeft = flight.getSeatsLeft();
-			System.out.println("Flight exists. So updating");
-			
 			
 			//set the plane. check the capacity of the plane
 			//if capacity is increasing add the difference in the seatsLeft
@@ -173,22 +171,14 @@ public class FlightController<E> {
 			int activeReservations = originalCapacity-flight.getSeatsLeft();
 			if(capacity >= originalCapacity){
 				seatsLeft = capacity-activeReservations;
-				/*flight.getPlane().setCapacity(capacity);
-				flight.setSeatsLeft(capacity-activeReservations);*/
-				System.out.println("Capcity greater than or equal to original");
 			}
 			else{
 				
-					System.out.println("Capcity less than original");
 					if(capacity<flight.getPassengers().size()){
-						//throw exception.
-						System.out.println("Capcity less than res");
 						throw new CustomException("400", "Active reservation count for this flight is higher than the target capacity");
 					}
 					else{
 						seatsLeft = capacity-activeReservations;
-						/*flight.getPlane().setCapacity(capacity);
-						flight.setSeatsLeft(capacity-activeReservations);*/
 					}
 				
 			}
@@ -217,7 +207,6 @@ public class FlightController<E> {
 				}
 			};
 			
-			//reservationList contains the result
 			List<Reservation> reservationList = reservationDAO.findAll(spec);
 			
 			for(Reservation reservation : reservationList){
@@ -258,11 +247,11 @@ public class FlightController<E> {
 	            .fromCurrentServletMapping().path("/flight/{flight_number}").queryParam("xml", true).build().expand(flightNumber).toUri();
 		
 		return redirectTo(location);
-		//return flight;
 		
 	}
 	
 	/**
+	 * Description: method for deleting a flight from the database
 	 * @param flightNumber
 	 * @return
 	 */
@@ -288,9 +277,6 @@ public class FlightController<E> {
 
 					
 					return redirectTo(location);
-
-					
-					//return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You can not delete a flight that has one or more reservation");
 				}
 				
 		} catch (Exception e) {
@@ -301,6 +287,7 @@ public class FlightController<E> {
 	}
 	
 	/**
+	 * Description: method to convert json object to XML
 	 * @param returnJsonVar
 	 * @return
 	 * @throws DocumentException
@@ -321,11 +308,11 @@ public class FlightController<E> {
         XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
         xmlWriter.write(document);  
         
-        //return stringWriter.toString();
         return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
 	}
 	
 	/**
+	 * Description: method to convert given JSON to pretty print format JSON
 	 * @param returnJsonVar
 	 * @return
 	 */
@@ -340,6 +327,7 @@ public class FlightController<E> {
 	}
 	
 	/**
+	 * Description: CustomException handler for this controller
 	 * @param e
 	 * @return
 	 */

@@ -57,6 +57,11 @@ public class PassengerController<E> {
 	@Autowired
 	private ReservationDAO reservationDAO;
 	
+	/**
+	 * Description: method to redirect to the given location
+	 * @param location
+	 * @return
+	 */
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLocation(location);
@@ -64,6 +69,7 @@ public class PassengerController<E> {
 	}
 	
 	/**
+	 * Description: method to create a passenger
 	 * @param firstname
 	 * @param lastname
 	 * @param age
@@ -101,6 +107,7 @@ public class PassengerController<E> {
 	}
 	
 	/**
+	 * Description: method to get the details of a passenger 
 	 * @param id
 	 * @param isXmlReq
 	 * @param response
@@ -210,6 +217,7 @@ public class PassengerController<E> {
 	}
 
 	/**
+	 * Description: method for updating passenger details
 	 * @param id
 	 * @param firstname
 	 * @param lastname
@@ -249,7 +257,6 @@ public class PassengerController<E> {
 			
 			passengerDAO.save(passenger);
 		}
-		//return new ModelAndView("forward:/passenger/" + passenger.getId() + "?json=true", model);
 		URI location = ServletUriComponentsBuilder
 	            .fromCurrentServletMapping().path("/passenger/" + passenger.getId()).queryParam("json", true).build().toUri();
 
@@ -257,6 +264,7 @@ public class PassengerController<E> {
 	}
 	
 	/**
+	 * Description: method to delete passenger
 	 * @param id
 	 * @return
 	 * @throws Exception
@@ -301,6 +309,7 @@ public class PassengerController<E> {
 	}
 	
 	/**
+	 * Description: Exception handler for PassengerController
 	 * @param e
 	 * @return
 	 */

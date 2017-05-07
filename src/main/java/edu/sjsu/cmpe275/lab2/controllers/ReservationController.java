@@ -67,6 +67,7 @@ public class ReservationController<E> {
 	private PassengerDAO passengerDAO;
 	
 	/**
+	 * Description: method to redirect to given location
 	 * @param location
 	 * @return
 	 */
@@ -77,6 +78,7 @@ public class ReservationController<E> {
 	}
 	
 	/**
+	 * Description: method to create reservation
 	 * @param passengerId
 	 * @param flightList
 	 * @return
@@ -130,7 +132,7 @@ public class ReservationController<E> {
 				if(flightTemp!=null)
 					pastFlightLists.add(flightTemp);
 			}
-			//
+			
 			int price = 0;
 			
 			int pastFlightListsSize = pastFlightLists.size();
@@ -176,8 +178,8 @@ public class ReservationController<E> {
 		return redirectTo(location);
 	}
 	
-	//https://hostname/reservation/number
 	/**
+	 * Description: method to fetch details of reservation from database
 	 * @param orderNumber
 	 * @param isXmlReq
 	 * @param response
@@ -272,13 +274,13 @@ public class ReservationController<E> {
 	}
 	
 	/**
+	 * Description: method to cancel reservation
 	 * @param orderNumber
 	 * @return
 	 */
 	@Transactional
 	@RequestMapping(value="/reservation/{order_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> cancelReservation(@PathVariable(value = "order_number")String orderNumber){
-		//find the reservation
 		
 		Reservation reservation = new Reservation();
 		reservation = reservationDAO.findOne(orderNumber);
@@ -295,7 +297,6 @@ public class ReservationController<E> {
 			}
 			
 			reservationDAO.delete(reservation);
-			//passengerDAO.delete(reservation.getPassenger());
 			 location = ServletUriComponentsBuilder
 		            .fromCurrentServletMapping().path("/applicationErrorInXML").queryParam("code", "200").queryParam("msg", "Reservation order number " + orderNumber + " is cancelled successfully").build().toUri();
 
@@ -305,8 +306,8 @@ public class ReservationController<E> {
 		return redirectTo(location);
 	}
 	
-	//https://hostname/reservation/number?flightsAdded=AA,BB,CC&flightsRemoved=XX,YY
 	/**
+	 * Description: method to update a reservation
 	 * @param orderNumber
 	 * @param flightsAdded
 	 * @param flightsRemoved
@@ -329,7 +330,7 @@ public class ReservationController<E> {
 			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsRemoved list cannot be empty").build().toUri();
 				return redirectTo(location);
 			}
-			//System.out.println(flightsRemoved[0]);
+			
 			for (String flightNumber : flightsRemoved) {
 				Flight removedflight = new Flight();
 				removedflight = flightDAO.findOne(flightNumber);
@@ -354,16 +355,14 @@ public class ReservationController<E> {
 			            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flightsAdded list cannot be empty.").build().toUri();
 				return redirectTo(location);
 			}
-			System.out.println("Flight added are there");
+			
 			for (String flightNumber : flightsAdded) {
-				System.out.println("Flight "+flightNumber);
+				
 				Flight addedflight = new Flight();
 				addedflight = flightDAO.findOne(flightNumber);
 				//check if plane capacity exceeds or not
 				if(addedflight.getSeatsLeft()==0){
-					/*location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, flight "+flightNumber+" is completely booked!").build().toUri();
-					*///return redirectTo(location);
+					
 					throw new CustomException("404", "Sorry, flight "+flightNumber+" is completely booked!");
 				}
 				
@@ -383,27 +382,23 @@ public class ReservationController<E> {
 						break;
 					}
 				}
-				System.out.println(flag);
+				
 				if(flag == 1){
 					//Time overlap. Send 404
-					System.out.println(" Flight can't be added ");
 					
-					/*location = ServletUriComponentsBuilder
-				            .fromCurrentServletMapping().path("/applicationError").queryParam("code", "404").queryParam("msg", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber).build().toUri();
-					return redirectTo(location);*/
 					throw new CustomException("404", "Sorry, There is a time overlap between flight " + flightNumber + " and flight "+conflictedFlightNumber);
 				} else{
-					System.out.println("Adding passenger to flight");
+					
 					//add the passenger to the flight
 					addedflight.getPassengers().add(passenger);
 					//update the seats
-					System.out.println("Updating the seats flight");
+					
 					
 					addedflight.setSeatsLeft(addedflight.getSeatsLeft()-1);
 					//update the reservation price by adding the new flight price
 					reservationPrice= reservationPrice + addedflight.getPrice();
 					//add the flight to the reservation
-					System.out.println("Updating the flights");
+					
 					reservation.getFlights().add(addedflight);				
 				}
 			}	
@@ -418,6 +413,7 @@ public class ReservationController<E> {
 		
 	}	
 	/**
+	 * Description: method to search reservations from given criteria
 	 * @param passengerId
 	 * @param from
 	 * @param to
@@ -440,7 +436,6 @@ public class ReservationController<E> {
 				Join<Reservation,Flight> joinRoot = root.join(Reservation_.flights);
 				
 			    if (!"".equalsIgnoreCase(passengerId)) {
-			      //predicates.add(cb.like(root.get(Reservation_.passenger).get(Passenger_.id), passengerId + "%"));
 			    	predicates.add(cb.equal(root.get(Reservation_.passenger).get(Passenger_.id), passengerId ));
 			    }
 			    
@@ -468,16 +463,12 @@ public class ReservationController<E> {
 			}
 		};
 		
-		//reservationList contains the result
 		List<Reservation> reservationList = reservationDAO.findAll(spec);
 		
 		JSONObject returnJsonVar = new JSONObject();
 		JSONObject reservationJSONVar = new JSONObject();
 		List<JSONObject> reservationListJSONVar = new ArrayList<JSONObject>();
 		
-		for(Reservation r : reservationList){
-			System.out.println(r.getOrderNumber());
-		}
 		
 		for(Reservation currReservation: reservationList){
 			JSONObject reservationTempJSON = new JSONObject();
@@ -534,6 +525,7 @@ public class ReservationController<E> {
 	}
 	
 	/**
+	 * Description: method to convert JSON to pretty print format JSON
 	 * @param returnJsonVar
 	 * @return
 	 */
@@ -547,6 +539,7 @@ public class ReservationController<E> {
 	}
 	
 	/**
+	 * Description: method to convert json to XML
 	 * @param returnJsonVar
 	 * @return
 	 * @throws DocumentException
@@ -567,7 +560,6 @@ public class ReservationController<E> {
         XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
         xmlWriter.write(document);  
         
-        //return stringWriter.toString();
         return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
 	}
 	
@@ -595,7 +587,6 @@ public class ReservationController<E> {
 		JSONObject listOfFlights = new JSONObject();
 		listOfFlights.put("flight", reservation.getFlights());
 		
-		//need to remove the passengers list from flight
 		reservationObj.put("flights", listOfFlights);
 						
 		JSONObject returnJsonVar = new JSONObject();
@@ -605,6 +596,7 @@ public class ReservationController<E> {
 	}
 	
 	/**
+	 * Description: Exception handler for ReservationController class
 	 * @param e
 	 * @return
 	 */
