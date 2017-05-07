@@ -34,7 +34,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import edu.sjsu.cmpe275.lab2.dao.FlightDAO;
 import edu.sjsu.cmpe275.lab2.dao.PassengerDAO;
 import edu.sjsu.cmpe275.lab2.dao.ReservationDAO;
 import edu.sjsu.cmpe275.lab2.model.CustomException;
@@ -57,9 +56,6 @@ public class PassengerController<E> {
 	
 	@Autowired
 	private ReservationDAO reservationDAO;
-	
-	@Autowired
-	private FlightDAO flightDAO; 
 	
 	public ResponseEntity<E> redirectTo(URI location){
 		HttpHeaders headers = new HttpHeaders();
