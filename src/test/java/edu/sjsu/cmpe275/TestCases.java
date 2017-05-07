@@ -27,9 +27,10 @@ public class TestCases {
 	@Test
 	public void createPassenger(){
 		
-		//creating  anew passenger
+		String phoneNumber = "6692949530";
+		//creating  a new passenger
 		String urlTemp = "/passenger";
-		String urlParameters = "firstname=Siddharth&lastname=Patel&age=21&gender=male&phone=6692949524";
+		String urlParameters = "firstname=Bruce&lastname=Wayne&age=21&gender=male&phone="+phoneNumber;
 		String requestMethod = "POST";
 		
 		JSONObject returnJSON = makeRequest(urlTemp, urlParameters, requestMethod);
@@ -57,12 +58,13 @@ public class TestCases {
 		
 		//again creating a passenger with same phone number - should give 400 error code
 		urlTemp = "/passenger";
-		urlParameters = "firstname=Siddharth&lastname=Patel&age=21&gender=male&phone=6692949502";
+		urlParameters = "firstname=Bruce&lastname=Wayne&age=21&gender=male&phone="+phoneNumber;
 		requestMethod = "POST";
 		returnJSON = makeRequest(urlTemp, urlParameters, requestMethod);
 		responseCode = returnJSON.getInt("responseCode");
-		
 		assertEquals(responseCode, 400);
+		
+		
 	}
 	
 	public JSONObject makeRequest(String urlTemp, String urlParameters, String requestMethod){
@@ -76,17 +78,19 @@ public class TestCases {
 			
 			con = (HttpURLConnection) obj.openConnection();
 			con.setRequestMethod(requestMethod);
-			con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-			con.setDoOutput(true);
-			con.setUseCaches(false);
+			if(con.getDoOutput())
+				con.setDoOutput(false);
+			//con.setDoOutput(true);
+			//con.setUseCaches(false);
 			
 			if(!"GET".equalsIgnoreCase(con.getRequestMethod()) && con.getRequestMethod()!=null && !"".equalsIgnoreCase(urlParameters)){
-				
+				con.setDoOutput(true);
 				DataOutputStream wr = new DataOutputStream(con.getOutputStream());
 				wr.writeBytes(urlParameters);
 				wr.flush();
 				wr.close();
 				con.getOutputStream().close();
+				
 			}
 			
 			int responseCode = con.getResponseCode();
@@ -112,6 +116,7 @@ public class TestCases {
 			
 			in.close();
 			inputStream.close();
+			
 			con.disconnect();
 			jsonObject = new JSONObject(response.toString());
 			jsonObject.put("responseCode", responseCode);

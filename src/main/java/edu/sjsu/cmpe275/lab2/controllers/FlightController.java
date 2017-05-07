@@ -259,7 +259,6 @@ public class FlightController<E> {
 	@RequestMapping(value="/airline/{flight_number}",method=RequestMethod.DELETE)
 	public ResponseEntity<E> deleteFlight(@PathVariable(value = "flight_number")String flightNumber){
 		
-		try {
 				Flight flight = new Flight();
 				flight.setNumber(flightNumber);
 				flight = flightDAO.findOne(flightNumber);
@@ -278,11 +277,7 @@ public class FlightController<E> {
 					
 					return redirectTo(location);
 				}
-				
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new CustomException("500", "Something went wrong");
-		}
+		
 		
 	}
 	

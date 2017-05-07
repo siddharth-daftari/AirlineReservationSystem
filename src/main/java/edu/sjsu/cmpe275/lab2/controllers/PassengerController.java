@@ -98,8 +98,6 @@ public class PassengerController<E> {
 			passengerDAO.save(passenger);
 		}
 		
-		
-		//return new ModelAndView("redirect:/passenger/" + passenger.getId() + "?json=true", model);
 		URI location = ServletUriComponentsBuilder
 	            .fromCurrentServletMapping().path("/passenger/" + passenger.getId()).queryParam("json", true).build().toUri();
 
@@ -209,7 +207,6 @@ public class PassengerController<E> {
 	            XMLWriter xmlWriter = new XMLWriter(stringWriter, outputFormat);  
 	            xmlWriter.write(document);  
 	            
-	            //return stringWriter.toString();
 	            return (ResponseEntity<E>) new ResponseEntity<String>(stringWriter.toString(),HttpStatus.OK);
 			}
 			
