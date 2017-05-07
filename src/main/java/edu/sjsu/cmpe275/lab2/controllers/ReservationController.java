@@ -88,7 +88,7 @@ public class ReservationController<E> {
 	public ResponseEntity<E> createReservation(@RequestParam(value="passengerId") String passengerId, @RequestParam(value="flightLists") String[] flightList) throws Exception, IOException {
 		Reservation reservation = null;
 		URI location;
-		try {
+		
 			Passenger passenger = new Passenger();
 			passenger = passengerDAO.findOne(passengerId);
 			
@@ -168,10 +168,7 @@ public class ReservationController<E> {
 			reservation = reservationDAO.save(reservation);
 			reservation = reservationDAO.findOne(reservation.getOrderNumber());
 						
-		}catch(Exception e){
-			e.printStackTrace();
-			throw new CustomException("500", "Sorry, something went wrong.");
-		}
+		
 		
 		location = ServletUriComponentsBuilder
 	            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).queryParam("xml", true).build().toUri();
@@ -341,10 +338,13 @@ public class ReservationController<E> {
 				removedflight.setSeatsLeft(removedflight.getSeatsLeft()+1);
 				//remove the passenger
 				removedflight.getPassengers().remove(reservation.getPassenger());
+				flightDAO.save(removedflight);
 				//remove the flight from the reservation
 				reservation.getFlights().remove(removedflight);
 			}	
 			reservation.setPrice(reservationPrice);
+			reservationDAO.save(reservation);
+			
 		}
 		
 			
@@ -353,7 +353,10 @@ public class ReservationController<E> {
 				throw new CustomException("404", "Sorry, flightsAdded list cannot be empty.");
 			}
 			System.out.println("Flight added are there");
+			reservation = reservationDAO.findOne(orderNumber);
+			
 			for (String flightNumber : flightsAdded) {
+				
 				System.out.println("Flight "+flightNumber);
 				Flight addedflight = new Flight();
 				addedflight = flightDAO.findOne(flightNumber);
@@ -371,6 +374,15 @@ public class ReservationController<E> {
 					
 					Date bookedArrivalTime = bookedFlights.getArrivalTime();
 					Date bookedDepartureTime = bookedFlights.getDepartureTime();
+					
+					/*if(arrivalTime.before(bookedDepartureTime) || departureTime.after(bookedArrivalTime)){
+						
+					}else{
+					
+						flag = 1;
+						conflictedFlightNumber =bookedFlights.getNumber();
+						break;
+					}*/
 					
 					if(((bookedDepartureTime.compareTo(arrivalTime) >= 0) &&(bookedArrivalTime.compareTo(arrivalTime)<=0) ) ||((bookedArrivalTime.compareTo(departureTime)<=0) && (departureTime.compareTo(bookedDepartureTime)<=0)) ){
 						flag = 1;
@@ -403,7 +415,10 @@ public class ReservationController<E> {
 			reservation.setPrice(reservationPrice);
 		}
 		reservationDAO.save(reservation);
-		return convertToJSON(generateReservationJSONObject(reservation));
+		location = ServletUriComponentsBuilder
+	            .fromCurrentServletMapping().path("/reservation/" + reservation.getOrderNumber()).build().toUri();
+
+		return redirectTo(location);
 		
 		
 	}
